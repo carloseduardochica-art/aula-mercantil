@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aula · Derecho Mercantil y Societario · UCACUE</title>
+<style>
+:root{
+  --papel:#f6f6f4;
+  --papel-alt:#ececea;
+  --blanco:#ffffff;
+  --tinta:#17181a;
+  --tinta-suave:#33353a;
+  --acento:#0a5757;
+  --acento-claro:#14807f;
+  --acento-tenue:#e2eeed;
+  --contra:#8a2b2b;
+  --contra-tenue:#f4e7e7;
+  --linea:#d0d0cd;
+  --nota:#474745;
+  --aviso:#7a5200;
+  --serif:Charter,"Georgia","Segoe UI",system-ui,sans-serif;
+  --titulo:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;padding:0;background:var(--papel);color:var(--tinta);
+  font-family:var(--serif);font-size:18px;line-height:1.7;
+}
+h1,h2,h3,h4{font-family:var(--titulo);font-weight:600;line-height:1.2;margin:0}
+
+/* -------- cabecera -------- */
+.banda{background:var(--acento);color:#fff;padding:2rem 0 1.8rem}
+.banda-int{max-width:1080px;margin:0 auto;padding:0 1.1rem}
+.emisor{font-family:var(--titulo);font-size:.7rem;letter-spacing:.2em;
+  text-transform:uppercase;color:#cfe3e2;margin:0 0 .5rem}
+.rotulo{font-size:clamp(1.5rem,4.5vw,2.4rem);color:#fff;margin:0 0 .8rem}
+.datos{display:flex;flex-wrap:wrap;gap:.4rem 1.6rem;font-family:var(--titulo);
+  font-size:.84rem;color:#cfe3e2}
+.datos b{color:#fff;font-weight:600}
+
+.hoja{max-width:1080px;margin:0 auto;padding:0 1.1rem 5rem}
+
+/* -------- aviso de qué es esto -------- */
+.intro{background:var(--blanco);border:1px solid var(--linea);
+  border-left:4px solid var(--acento);border-radius:3px;
+  padding:1.3rem 1.5rem;margin:2rem 0}
+.intro p{margin:0 0 .7rem}
+.intro p:last-child{margin:0}
+
+/* -------- bloques -------- */
+.bloque{margin:3rem 0 0}
+.bloque-cab{display:flex;align-items:baseline;gap:1rem;flex-wrap:wrap;
+  border-bottom:2px solid var(--acento);padding-bottom:.6rem;margin-bottom:.4rem}
+.bloque-cab h2{font-size:1.45rem}
+.bloque-cab .rango{font-family:var(--titulo);font-size:.85rem;color:var(--nota)}
+.bloque-sub{color:var(--nota);font-size:.98rem;margin:.5rem 0 1.4rem}
+
+/* -------- tarjetas -------- */
+.rejilla{display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.pieza{background:var(--blanco);border:1px solid var(--linea);border-radius:3px;
+  padding:1.1rem 1.2rem;display:flex;flex-direction:column;gap:.6rem}
+.pieza.tarea{border-top:3px solid var(--acento)}
+.pieza.lectura{border-top:3px solid var(--nota)}
+.pieza.pendiente{background:var(--papel-alt);border-style:dashed}
+
+.etq{font-family:var(--titulo);font-size:.66rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--nota);display:flex;gap:.5rem;
+  flex-wrap:wrap;align-items:center}
+.etq .pts{background:var(--acento);color:#fff;border-radius:2px;
+  padding:.05rem .4rem;font-weight:700;letter-spacing:.06em}
+.pieza h3{font-size:1.08rem}
+.pieza p{margin:0;font-size:.94rem;color:var(--tinta-suave)}
+
+.fechas{font-family:var(--titulo);font-size:.8rem;color:var(--nota);
+  border-top:1px solid var(--linea);padding-top:.6rem;margin-top:auto}
+.fechas b{color:var(--tinta)}
+.estado{display:inline-block;font-family:var(--titulo);font-size:.7rem;
+  font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  border-radius:2px;padding:.1rem .45rem;margin-top:.35rem}
+.estado.abierta{background:var(--acento-tenue);color:var(--acento);border:1px solid var(--acento-claro)}
+.estado.proxima{background:#fdf6e3;color:#6b4a00;border:1px solid #e0cd93}
+.estado.urgente{background:var(--contra-tenue);color:var(--contra);border:1px solid var(--contra)}
+.estado.cerrada{background:var(--papel-alt);color:var(--nota);border:1px solid var(--linea)}
+
+.btn{display:inline-block;font-family:var(--titulo);font-size:.9rem;font-weight:600;
+  background:var(--acento);color:#fff;border:1px solid var(--acento);
+  border-radius:3px;padding:.6rem 1.1rem;text-decoration:none;text-align:center}
+.btn:hover{background:var(--acento-claro)}
+.btn:focus-visible{outline:2px solid var(--tinta);outline-offset:2px}
+.btn.sec{background:transparent;color:var(--acento)}
+.btn.sec:hover{background:var(--acento-tenue)}
+.btn.muerto{background:var(--papel-alt);color:var(--nota);border-color:var(--linea);
+  cursor:not-allowed;pointer-events:none}
+
+/* -------- pie -------- */
+.pie{margin-top:3.5rem;border-top:1px solid var(--linea);padding-top:1.4rem;
+  font-size:.9rem;color:var(--nota)}
+.pie h4{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--acento);margin:0 0 .6rem}
+.pie p{margin:0 0 .7rem}
+
+@media (max-width:620px){
+  body{font-size:17px}
+  .rejilla{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header class="banda">
+  <div class="banda-int">
+    <p class="emisor">Universidad Católica de Cuenca · Facultad de Ciencias Sociales · Carrera de Derecho</p>
+    <h1 class="rotulo">Derecho Mercantil y Societario</h1>
+    <div class="datos">
+      <span><b>Docente:</b> Ab. Carlos Eduardo Chica-Villacís, Mgtr.</span>
+      <span><b>Ciclo:</b> Tercero</span>
+      <span><b>Paralelo:</b> 3A</span>
+      <span><b>Modalidad:</b> En línea</span>
+      <span><b>Periodo:</b> Septiembre 2026 – Febrero 2027</span>
+    </div>
+  </div>
+</header>
+
+<div class="hoja">
+
+  <div class="intro">
+    <p><b>Esta es la segunda aula.</b> Aquí vive el material de lectura y las
+    actividades que corren fuera de Moodle. Todo lo que abra desde aquí se lee y
+    se trabaja en su navegador.</p>
+    <p><b>Las entregas siguen siendo en el aula virtual.</b> Esta página no
+    recibe nada: cuando termine una actividad, descargue el archivo que le
+    entregue y súbalo a la tarea correspondiente en Moodle. Lo que decide la
+    nota es lo que llegue allí.</p>
+    <p>Las fechas que ve en cada tarjeta son las del sílabo firmado. Si alguna
+    cambia, manda la del aula virtual.</p>
+  </div>
+
+  <!-- ============================ BLOQUE 1 ============================ -->
+  <section class="bloque">
+    <div class="bloque-cab">
+      <h2>Bloque 1</h2>
+      <span class="rango">14 de septiembre – 4 de octubre de 2026</span>
+    </div>
+    <p class="bloque-sub">Derecho Mercantil: generalidades; los actos de comercio
+    y las fuentes de las obligaciones. Veinte secciones, del concepto de derecho
+    mercantil a los títulos valores.</p>
+
+    <div class="rejilla">
+
+      <article class="pieza lectura">
+        <div class="etq"><span>Material de lectura</span></div>
+        <h3>Lectura del Bloque 1</h3>
+        <p>Las veinte secciones en un solo sitio, con índice lateral y veinte
+        láminas. Es el material sobre el que se resuelven todas las tareas del
+        bloque.</p>
+        <div class="fechas"><b>Sin fecha:</b> disponible todo el bloque</div>
+        <a class="btn sec" href="lectura-b1/">Abrir la lectura</a>
+      </article>
+
+      <article class="pieza tarea" data-cierre="2026-09-21">
+        <div class="etq"><span>AD · Contacto docente</span><span class="pts">10 pts</span></div>
+        <h3>Foro de debate socrático con IA</h3>
+        <p>Cuatro rondas contra una inteligencia artificial que defiende una
+        tesis equivocada sobre la mercantilidad. Se entrega el acta en PDF y el
+        código de constancia.</p>
+        <div class="fechas">
+          <b>Asignada:</b> 14-09-2026 · <b>Entrega:</b> 21-09-2026
+          <br><span class="estado"></span>
+        </div>
+        <a class="btn" href="foro-b1/">Entrar al foro</a>
+      </article>
+
+      <article class="pieza pendiente" data-cierre="2026-09-27">
+        <div class="etq"><span>AP · Práctico-experimental</span><span class="pts">10 pts</span></div>
+        <h3>Llenado de una letra de cambio</h3>
+        <p>Los ocho literales del artículo 114 del Código de Comercio, y qué
+        omisión anula la letra y cuál se salva por presunción del artículo 115.</p>
+        <div class="fechas">
+          <b>Asignada:</b> 14-09-2026 · <b>Entrega:</b> 27-09-2026
+          <br><span class="estado"></span>
+        </div>
+        <span class="btn muerto">En preparación</span>
+      </article>
+
+      <article class="pieza tarea" data-cierre="2026-10-04">
+        <div class="etq"><span>AA · Aprendizaje autónomo</span><span class="pts">15 pts</span></div>
+        <h3>Autocontrol de lectura</h3>
+        <p>Setenta y ocho preguntas, una al cerrar cada apartado. Dos intentos y
+        cuenta el mejor. Emite constancia en PDF con código de validación.</p>
+        <div class="fechas">
+          <b>Asignada:</b> 14-09-2026 · <b>Entrega:</b> 04-10-2026
+          <br><span class="estado"></span>
+        </div>
+        <a class="btn" href="autocontrol-b1/">Empezar el autocontrol</a>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ============================ BLOQUE 2 ============================ -->
+  <section class="bloque">
+    <div class="bloque-cab">
+      <h2>Bloque 2</h2>
+      <span class="rango">5 – 25 de octubre de 2026</span>
+    </div>
+    <p class="bloque-sub">Sociedades en general, clases de compañías, auditoría
+    externa y legislación societaria. Dieciséis secciones, de la commenda
+    medieval a la sociedad por acciones simplificada.</p>
+
+    <div class="rejilla">
+
+      <article class="pieza lectura">
+        <div class="etq"><span>Material de lectura</span></div>
+        <h3>Lectura del Bloque 2</h3>
+        <p>Las dieciséis secciones con sus nueve láminas. Cubre los cinco tipos
+        societarios, la auditoría externa y la legislación societaria
+        ecuatoriana.</p>
+        <div class="fechas"><b>Sin fecha:</b> disponible todo el bloque</div>
+        <a class="btn sec" href="lectura-b2/">Abrir la lectura</a>
+      </article>
+
+      <article class="pieza tarea" data-cierre="2026-10-12">
+        <div class="etq"><span>AD · Contacto docente</span><span class="pts">10 pts</span></div>
+        <h3>Foro de debate socrático con IA</h3>
+        <p>Cuatro rondas sobre las tipologías societarias. Si la SAS se crea con
+        un documento privado y un dólar, ¿para qué siguen vivas las otras cuatro
+        formas?</p>
+        <div class="fechas">
+          <b>Asignada:</b> 05-10-2026 · <b>Entrega:</b> 12-10-2026
+          <br><span class="estado"></span>
+        </div>
+        <a class="btn" href="foro-b2/">Entrar al foro</a>
+      </article>
+
+      <article class="pieza pendiente" data-cierre="2026-10-18">
+        <div class="etq"><span>AP · Práctico-experimental</span><span class="pts">10 pts</span></div>
+        <h3>Minuta de compañía SAS</h3>
+        <p>Los doce numerales que la Ley de Compañías exige al documento
+        constitutivo de una sociedad por acciones simplificada.</p>
+        <div class="fechas">
+          <b>Asignada:</b> 05-10-2026 · <b>Entrega:</b> 18-10-2026
+          <br><span class="estado"></span>
+        </div>
+        <span class="btn muerto">En preparación</span>
+      </article>
+
+      <article class="pieza pendiente" data-cierre="2026-10-22">
+        <div class="etq"><span>AA · Investigación formativa</span><span class="pts">10 pts</span></div>
+        <h3>Búsqueda de fuentes bibliográficas</h3>
+        <p>Levantar y valorar fuentes académicas sobre un tema mercantil, con los
+        mismos criterios de curaduría que se usaron para escribir este material.</p>
+        <div class="fechas">
+          <b>Asignada:</b> 14-09-2026 · <b>Entrega:</b> 22-10-2026
+          <br><span class="estado"></span>
+        </div>
+        <span class="btn muerto">En preparación</span>
+      </article>
+
+      <article class="pieza tarea" data-cierre="2026-10-24">
+        <div class="etq"><span>AA · Aprendizaje autónomo</span><span class="pts">15 pts</span></div>
+        <h3>Autocontrol de lectura</h3>
+        <p>Setenta preguntas, una por apartado. Dos intentos y cuenta el mejor.
+        Emite constancia en PDF con código de validación.</p>
+        <div class="fechas">
+          <b>Asignada:</b> 05-10-2026 · <b>Entrega:</b> 24-10-2026
+          <br><span class="estado"></span>
+        </div>
+        <a class="btn" href="autocontrol-b2/">Empezar el autocontrol</a>
+      </article>
+
+    </div>
+  </section>
+
+  <div class="pie">
+    <h4>Cómo se califica lo que sale de aquí</h4>
+    <p>El foro y el autocontrol emiten un <b>código de constancia</b> firmado.
+    Ese código, junto con el PDF, es lo que se sube al aula virtual. Un código
+    retocado a mano se detecta al verificarlo.</p>
+
+    <h4>Si algo no abre</h4>
+    <p>Estas páginas necesitan JavaScript y conexión. El foro, además, habla con
+    un servidor propio: si al enviar un turno avisa de un error de red,
+    reinténtelo; su texto no se pierde. Y no descargue los archivos para abrirlos
+    sin conexión, porque el foro deja de funcionar fuera de esta dirección.</p>
+
+    <h4>Aviso</h4>
+    <p>El material de lectura se elaboró sobre fuentes académicas nombradas y
+    sobre el articulado vigente, cotejado carácter por carácter. Donde una fuente
+    analiza derecho extranjero se dice de qué país es, y donde el docente aporta
+    un ejemplo propio también se dice.</p>
+  </div>
+
+</div>
+
+<script>
+// Pinta el estado de cada tarea comparando su fecha de cierre con el reloj del
+// aparato. Es informativo: lo que cierra de verdad es el aula virtual.
+(function(){
+  var HOY = new Date(); HOY.setHours(0,0,0,0);
+  var tarjetas = document.querySelectorAll('[data-cierre]');
+  for (var i = 0; i < tarjetas.length; i++) {
+    var t = tarjetas[i];
+    var s = t.getAttribute('data-cierre').split('-');
+    var cierre = new Date(+s[0], +s[1]-1, +s[2]);
+    var dias = Math.round((cierre - HOY) / 86400000);
+    var caja = t.querySelector('.estado');
+    if (!caja) continue;
+    if (dias < 0) {
+      caja.className = 'estado cerrada';
+      caja.textContent = 'Plazo vencido';
+    } else if (dias === 0) {
+      caja.className = 'estado urgente';
+      caja.textContent = 'Cierra hoy';
+    } else if (dias <= 3) {
+      caja.className = 'estado urgente';
+      caja.textContent = 'Cierra en ' + dias + (dias === 1 ? ' día' : ' días');
+    } else if (dias <= 10) {
+      caja.className = 'estado proxima';
+      caja.textContent = 'Cierra en ' + dias + ' días';
+    } else {
+      caja.className = 'estado abierta';
+      caja.textContent = 'Cierra en ' + dias + ' días';
+    }
+  }
+})();
+</script>
+</body>
+</html>
