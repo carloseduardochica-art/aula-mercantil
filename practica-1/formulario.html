@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Formulario de letra de cambio · Práctica 1 · UCACUE</title>
+<style>
+:root{
+  --papel:#f6f6f4; --blanco:#fff; --tinta:#17181a; --nota:#474745;
+  --acento:#0a5757; --linea:#d0d0cd;
+  --serif:Charter,"Georgia","Segoe UI",system-ui,sans-serif;
+  --titulo:"Segoe UI",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--papel);color:var(--tinta);
+  font-family:var(--serif);font-size:17px;line-height:1.65}
+h1,h2,h3{font-family:var(--titulo);font-weight:600;line-height:1.2;margin:0}
+
+.banda{background:var(--acento);color:#fff;padding:1.4rem 0}
+.banda-int{max-width:1000px;margin:0 auto;padding:0 1.1rem}
+.emisor{font-family:var(--titulo);font-size:.68rem;letter-spacing:.2em;
+  text-transform:uppercase;color:#cfe3e2;margin:0 0 .4rem}
+.rotulo{font-size:1.4rem;color:#fff}
+.hoja{max-width:1000px;margin:0 auto;padding:1.6rem 1.1rem 4rem}
+
+.instrucciones{background:var(--blanco);border:1px solid var(--linea);
+  border-left:4px solid var(--acento);border-radius:3px;padding:1.2rem 1.4rem;margin-bottom:1.4rem}
+.instrucciones h2{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--acento);margin-bottom:.7rem}
+.instrucciones p{margin:0 0 .7rem}
+.instrucciones p:last-child{margin:0}
+.instrucciones ol{margin:0 0 .7rem;padding-left:1.3rem}
+.instrucciones li{margin-bottom:.4rem}
+
+.btn{font-family:var(--titulo);font-size:.95rem;font-weight:600;
+  background:var(--acento);color:#fff;border:1px solid var(--acento);
+  border-radius:3px;padding:.65rem 1.3rem;cursor:pointer;min-height:44px}
+.btn:hover{background:#14807f}
+
+/* ===================== LA LETRA ===================== */
+.letra{
+  background:#fff;border:2px solid #17181a;border-radius:2px;
+  padding:1.5rem 1.7rem;margin:1.4rem 0;position:relative;overflow:hidden;
+  font-family:"Segoe UI",Arial,sans-serif;font-size:14px;line-height:1.5;
+}
+.marca{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%) rotate(-24deg);
+  font-family:var(--titulo);font-size:2.6rem;font-weight:700;letter-spacing:.12em;
+  color:rgba(138,43,43,.13);white-space:nowrap;pointer-events:none;
+  text-align:center;line-height:1.25;
+}
+.letra-cab{display:flex;justify-content:space-between;align-items:flex-start;
+  gap:1rem;flex-wrap:wrap;border-bottom:1.5px solid #17181a;padding-bottom:.7rem}
+.letra-tit{font-size:1.35rem;font-weight:700;letter-spacing:.14em}
+.letra-lit{font-size:9.5px;color:#666;letter-spacing:.04em}
+.cifra{border:1.5px solid #17181a;padding:.4rem .9rem;min-width:190px;text-align:center}
+.cifra span{display:block;font-size:9.5px;color:#666;letter-spacing:.06em}
+.cifra b{display:block;font-size:1.1rem;letter-spacing:.06em;margin-top:.2rem}
+
+.fila{display:flex;gap:1.4rem;flex-wrap:wrap;margin-top:.9rem}
+.campo{flex:1 1 200px}
+.campo .et{font-size:9.5px;color:#666;letter-spacing:.05em;text-transform:uppercase}
+.raya{border-bottom:1px solid #17181a;height:1.5rem;margin-top:.15rem}
+.raya.alta{height:1.9rem}
+
+.parrafo{margin-top:1.1rem;font-size:14px}
+.enlinea{display:inline-block;border-bottom:1px solid #17181a;min-width:150px;height:1.2rem;vertical-align:bottom}
+.enlinea.corta{min-width:70px}
+.enlinea.larga{min-width:100%;margin-top:.35rem}
+
+.firmas{display:flex;gap:2.4rem;flex-wrap:wrap;margin-top:2.4rem}
+.firma{flex:1 1 240px;text-align:center}
+.firma .linea{border-top:1px solid #17181a;margin-bottom:.3rem}
+.firma .et{font-size:10px;color:#444;letter-spacing:.05em;text-transform:uppercase}
+.firma .sub{font-size:9px;color:#777}
+
+.pie-letra{margin-top:1.4rem;padding-top:.6rem;border-top:1px dashed #999;
+  font-size:9.5px;color:#666;line-height:1.5}
+
+.mapa{background:var(--blanco);border:1px solid var(--linea);border-radius:3px;
+  padding:1.2rem 1.4rem;margin-top:1.4rem}
+.mapa h2{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--acento);margin-bottom:.8rem}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th,td{border-bottom:1px solid var(--linea);padding:.5rem .45rem;text-align:left;vertical-align:top}
+th{font-family:var(--titulo);font-size:.68rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--nota)}
+
+@media print{
+  body{background:#fff;font-size:12px}
+  .banda,.instrucciones,.mapa,.btn,.noimprime{display:none !important}
+  .hoja{max-width:none;padding:0}
+  .letra{border:2px solid #000;margin:0;page-break-inside:avoid}
+  @page{size:A4 landscape;margin:12mm}
+}
+</style>
+</head>
+<body>
+
+<header class="banda noimprime">
+  <div class="banda-int">
+    <p class="emisor">Universidad Católica de Cuenca · Carrera de Derecho</p>
+    <h1 class="rotulo">Formulario de letra de cambio · Práctica 1</h1>
+  </div>
+</header>
+
+<div class="hoja">
+
+  <div class="instrucciones noimprime">
+    <h2>Cómo se usa</h2>
+    <ol>
+      <li>Pulse <b>Imprimir</b> y saque el formulario en una hoja A4 horizontal.</li>
+      <li>Llénelo <b>a mano</b>, con bolígrafo azul o negro. Sin tachaduras ni
+      enmendaduras: en un título de crédito, una corrección visible le resta
+      valor probatorio al documento.</li>
+      <li>Escanéelo a color, en PDF legible, y entréguelo según indica la guía.</li>
+    </ol>
+    <p><b>Por qué este formulario y no uno de internet.</b> Los formatos que
+    circulan en la red son papelería comercial de empresas concretas: traen el
+    beneficiario y las cláusulas ya impresas, de modo que usted no puede designar
+    al beneficiario de su caso ni elegir la modalidad de vencimiento. Este está
+    en blanco de verdad.</p>
+    <p><b>Este documento no tiene valor cambiario.</b> Lleva la marca impresa y
+    la advertencia al pie. Es un ejercicio académico y así debe quedar: no firme
+    con la firma que usa en sus documentos reales, simúlela.</p>
+    <button type="button" class="btn" onclick="window.print()">Imprimir el formulario</button>
+  </div>
+
+  <!-- ======================= EL FORMULARIO ======================= -->
+  <div class="letra">
+    <div class="marca">EJERCICIO ACADÉMICO<br>SIN VALOR CAMBIARIO</div>
+
+    <div class="letra-cab">
+      <div>
+        <div class="letra-tit">LETRA DE CAMBIO</div>
+        <div class="letra-lit">Art. 114 lit. a) · denominación inserta en el texto del documento</div>
+      </div>
+      <div class="cifra">
+        <span>POR US$ · art. 114 lit. b)</span>
+        <b>&nbsp;</b>
+      </div>
+    </div>
+
+    <div class="fila">
+      <div class="campo">
+        <div class="et">Lugar de giro · art. 114 lit. g)</div>
+        <div class="raya"></div>
+      </div>
+      <div class="campo">
+        <div class="et">Fecha de giro · art. 114 lit. g)</div>
+        <div class="raya"></div>
+      </div>
+      <div class="campo">
+        <div class="et">Vencimiento · art. 114 lit. d)</div>
+        <div class="raya"></div>
+      </div>
+    </div>
+
+    <div class="parrafo">
+      A su vencimiento se servirá usted pagar incondicionalmente por esta LETRA DE CAMBIO
+      <span style="font-size:9.5px;color:#666">· art. 114 lit. b)</span>,
+      en <span class="enlinea"></span>
+      <span style="font-size:9.5px;color:#666">lugar del pago · lit. e)</span>,
+      a la orden de <span class="enlinea"></span>
+      <span style="font-size:9.5px;color:#666">beneficiario · lit. f)</span>
+    </div>
+
+    <div class="parrafo">
+      la cantidad de <span style="font-size:9.5px;color:#666">(en letras)</span>
+      <span class="enlinea larga"></span>
+      <span class="enlinea larga"></span>
+    </div>
+
+    <div class="parrafo">
+      Más el interés del <span class="enlinea corta"></span> % anual
+      <span style="font-size:9.5px;color:#666">· solo si el vencimiento lo admite, art. 119</span>,
+      y el interés de mora del <span class="enlinea corta"></span> % anual.
+    </div>
+
+    <div class="fila" style="margin-top:1.2rem">
+      <div class="campo">
+        <div class="et">Girado · a quien se ordena pagar · art. 114 lit. c)</div>
+        <div class="raya alta"></div>
+        <div class="et" style="margin-top:.5rem">Domicilio del girado</div>
+        <div class="raya"></div>
+      </div>
+      <div class="campo">
+        <div class="et">Cédula o RUC del girado</div>
+        <div class="raya alta"></div>
+        <div class="et" style="margin-top:.5rem">Teléfono</div>
+        <div class="raya"></div>
+      </div>
+    </div>
+
+    <div class="firmas">
+      <div class="firma">
+        <div class="linea"></div>
+        <div class="et">Firma del girador</div>
+        <div class="sub">Art. 114 lit. h) · sin ella no hay letra de cambio</div>
+      </div>
+      <div class="firma">
+        <div class="linea"></div>
+        <div class="et">Aceptación del girado</div>
+        <div class="sub">No es requisito del art. 114. Se llena si el caso lo pide</div>
+      </div>
+    </div>
+
+    <div class="pie-letra">
+      FORMATO ACADÉMICO SIN VALOR CAMBIARIO · Universidad Católica de Cuenca ·
+      Carrera de Derecho · Derecho Mercantil y Societario · Práctica 1.
+      Este documento se emite para un ejercicio docente de llenado y
+      <b>no constituye ni puede circular como título de crédito</b>.
+    </div>
+  </div>
+
+  <!-- ======================= MAPA DE REQUISITOS ======================= -->
+  <div class="mapa noimprime">
+    <h2>Los ocho requisitos del artículo 114, y dónde va cada uno</h2>
+    <table>
+      <thead><tr><th>Lit.</th><th>Qué exige la ley</th><th>Dónde está en el formulario</th></tr></thead>
+      <tbody>
+        <tr><td><b>a)</b></td><td>La denominación «letra de cambio» inserta en el texto mismo del documento</td><td>Impresa en la cabecera</td></tr>
+        <tr><td><b>b)</b></td><td>La orden incondicional de pagar una cantidad determinada</td><td>El recuadro «POR US$» y la cantidad en letras</td></tr>
+        <tr><td><b>c)</b></td><td>El nombre de la persona que debe pagar, el girado</td><td>Recuadro inferior izquierdo</td></tr>
+        <tr><td><b>d)</b></td><td>La indicación del vencimiento</td><td>Tercer campo de la fila superior</td></tr>
+        <tr><td><b>e)</b></td><td>El señalamiento del lugar donde debe efectuarse el pago</td><td>En el párrafo «en ______»</td></tr>
+        <tr><td><b>f)</b></td><td>El nombre de la persona a quien o a cuya orden debe pagarse</td><td>En «a la orden de ______»</td></tr>
+        <tr><td><b>g)</b></td><td>La indicación de la fecha y del lugar en que se gira la letra</td><td>Primeros dos campos de la fila superior</td></tr>
+        <tr><td><b>h)</b></td><td>La firma de la persona que la emite, el girador</td><td>Línea de firma inferior izquierda</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:1rem;font-size:.93rem;color:var(--nota)">
+      Dos cosas que no son requisitos del artículo 114 y que el formulario
+      incluye porque su caso las necesita: el <b>interés</b>, que solo cabe si el
+      vencimiento lo admite conforme al artículo 119, y la <b>aceptación del
+      girado</b>, que pertenece a otro momento de la vida del título.
+    </p>
+  </div>
+
+</div>
+</body>
+</html>
