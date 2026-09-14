@@ -831,14 +831,24 @@ bEnv.addEventListener('click', async () => {
     if(!r.ok) throw new Error('HTTP ' + r.status);
 
     const datos = await r.json();
-    const replica = datos?.candidates?.[0]?.content?.parts?.[0]?.text;
+    const cand = datos?.candidates?.[0];
+
+    // Se juntan TODAS las partes, no solo la primera. Un modelo que razona
+    // puede devolver el razonamiento y el texto en partes distintas, y
+    // quedarse con parts[0] deja la respuesta vacía sin que lo esté.
+    const partes = (cand?.content?.parts) || [];
+    const replica = partes.map(p => (p && typeof p.text === 'string') ? p.text : '').join('').trim();
+
+    // El modelo se quedó sin presupuesto a mitad de escribir.
+    const cortada = cand?.finishReason === 'MAX_TOKENS';
+
     if(!replica) throw new Error('respuesta vacía');
 
     historia.push({ role:'model', parts:[{ text: replica }] });
     pinta('ia', replica);
 
     if(ronda >= RONDAS){
-      cierraDebate(replica);
+      cierraDebate(replica, cortada);
     } else {
       tArea.disabled = false; tArea.value = '';
       bEnv.textContent = 'Enviar intervención';
@@ -851,6 +861,8 @@ bEnv.addEventListener('click', async () => {
       tArea.focus();
     }
   } catch(err){
+    const eraRondaFinal = (ronda >= RONDAS);
+
     // Se devuelve el turno al estudiante y se retira de la historia lo que
     // no llegó a contestarse, para que reintentar no duplique su texto.
     historia.pop();
@@ -862,6 +874,25 @@ bEnv.addEventListener('click', async () => {
     document.querySelectorAll('.ancla').forEach(b => { if(!b.dataset.usada) b.disabled = false; });
     cont.textContent = 'No hubo respuesta del servidor. Su texto sigue aquí: vuelva a enviarlo.';
     cont.className = 'contador mal';
+
+    // Si lo que falló fue la ÚLTIMA ronda, el estudiante no puede quedarse
+    // atrapado: ya hizo el trabajo y tiene derecho a su acta. Se le ofrece
+    // cerrar sin dictamen, y el docente califica leyendo el debate.
+    if(eraRondaFinal && !document.getElementById('btn-rescate')){
+      const rescate = document.createElement('div');
+      rescate.className = 'aviso';
+      rescate.innerHTML =
+        '<strong>¿Ya lo reintentó y sigue fallando?</strong> No pierda el debate. ' +
+        'Puede cerrarlo sin el dictamen automático: el acta saldrá con sus cuatro ' +
+        'rondas completas y el docente la calificará leyéndola. ' +
+        '<br><button type="button" class="btn sec" id="btn-rescate" style="margin-top:.7rem">' +
+        'Cerrar el debate y descargar el acta</button>';
+      document.getElementById('redaccion').appendChild(rescate);
+      document.getElementById('btn-rescate').addEventListener('click', () => {
+        ronda = RONDAS;
+        cierraDebate('_SIN_DICTAMEN_', false);
+      });
+    }
   }
 });
 
@@ -881,7 +912,7 @@ function extraeTotal(texto){
   return (isFinite(n) && n >= 0 && n <= 10) ? n : null;
 }
 
-function cierraDebate(replica){
+function cierraDebate(replica, cortada){
   document.getElementById('redaccion').classList.add('oculto');
   document.getElementById('marcador').textContent = 'Debate cerrado · ' + RONDAS + ' de ' + RONDAS;
 
@@ -900,17 +931,39 @@ function cierraDebate(replica){
     minutos + 'M|1/1I|' + fechaLocal(fin) + '|' + (enPlazo() ? 'EP' : 'FP');
   const codigo = cuerpo + '|' + base36(djb2(SAL + cuerpo));
 
-  const iDict = replica.indexOf('### DICTAMEN');
-  const dictamen = iDict !== -1 ? replica.slice(iDict) : replica;
+  const sinDictamen = (replica === '_SIN_DICTAMEN_');
+  const iDict = sinDictamen ? -1 : replica.indexOf('### DICTAMEN');
+  let dictamen;
+  if(sinDictamen){
+    dictamen = '### DICTAMEN NO EMITIDO\n\nEl debate se cerró sin dictamen ' +
+      'automático porque el servicio de IA no respondió a la última ronda. ' +
+      'Las cuatro intervenciones constan íntegras en el apartado I de esta acta. ' +
+      'La calificación la determina el docente leyéndolas.';
+  } else {
+    dictamen = iDict !== -1 ? replica.slice(iDict) : replica;
+    if(cortada && notaFinal === null){
+      dictamen += '\n\n---\n\n**Aviso del sistema:** la respuesta de la IA se ' +
+        'interrumpió antes de terminar el dictamen, de modo que no llegó a emitir ' +
+        'un total. El debate del estudiante consta completo en el apartado I y no ' +
+        'se ve afectado por este corte.';
+    }
+  }
 
   const caja = document.getElementById('cierre');
   caja.className = 'cierre';
   caja.innerHTML =
     '<h3>Debate cerrado</h3>' +
     (notaFinal === null
-      ? '<div class="aviso"><strong>La IA no cerró con el total en el formato esperado.</strong> ' +
-        'No pasa nada: el acta lleva el dictamen completo y el docente lo lee. ' +
-        'La constancia sale con nota 0,00 y eso <em>no</em> es su calificación.</div>'
+      ? '<div class="aviso"><strong>' +
+        (sinDictamen
+          ? 'El debate se cerró sin dictamen automático.'
+          : (cortada
+              ? 'La IA se quedó a medias al redactar el dictamen.'
+              : 'La IA no cerró con el total en el formato esperado.')) +
+        '</strong> No pierde nada: <strong>sus cuatro rondas constan íntegras en el ' +
+        'acta</strong> y el docente califica leyéndolas. La constancia sale con ' +
+        'nota 0,00 y eso <em>no</em> es su calificación: es la marca de que la nota ' +
+        'la pone el docente. Descargue el acta y súbala igual.</div>'
       : '<p>Nota sugerida por la IA: <strong>' + notaFinal.toFixed(1).replace('.', ',') +
         ' / 10</strong>. Es una sugerencia: la definitiva la pone el docente al leer el acta.</p>') +
     (enPlazo() ? '' :

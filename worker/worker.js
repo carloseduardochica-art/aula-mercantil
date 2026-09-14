@@ -37,11 +37,28 @@ const ORIGENES_POR_DEFECTO = [
   'http://localhost:8000',
 ];
 
-// Topes. El foro pide entre 200 y 1500 caracteres por turno y son 3 rondas,
+// Topes. El foro pide entre 400 y 1800 caracteres por turno y son 4 rondas,
 // así que una conversación honesta no se acerca ni de lejos a estos números.
 const MAX_CUERPO_BYTES = 120 * 1024;
 const MAX_TURNOS = 40;
-const MAX_TOKENS_SALIDA = 1400;
+
+// CUIDADO CON ESTE NÚMERO. Corregido el 14-IX-2026, de 1400 a 4000.
+//
+// `maxOutputTokens` NO es el tamaño de la respuesta: es el presupuesto que el
+// modelo reparte entre lo que piensa y lo que escribe. El modelo que quedó
+// sirviendo, gemini-3.8-flash, razona antes de responder, y ese razonamiento
+// consume del mismo saco.
+//
+// Con 1400 la ronda final del foro se rompía así, medido contra el Worker en
+// vivo: thoughtsTokenCount 908 + candidatesTokenCount 488 = 1396, o sea el tope
+// entero, y finishReason MAX_TOKENS. El dictamen se cortaba en mitad del cuarto
+// criterio y nunca llegaba a escribir la línea «TOTAL SUGERIDO», que es de la
+// que la página saca la nota. Resultado para el estudiante: debate sin cerrar y
+// sin calificación.
+//
+// 4000 deja sitio de sobra para pensar y para un dictamen completo. No encarece
+// las rondas normales: el modelo para cuando termina, no cuando llega al tope.
+const MAX_TOKENS_SALIDA = 4000;
 
 // Se imponen aquí, no en la página. BLOCK_NONE dejaría el modelo abierto a
 // que un estudiante lo desvíe del debate; BLOCK_ONLY_HIGH no estorba a una
