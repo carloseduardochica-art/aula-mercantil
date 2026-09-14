@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador Caso Harvard · Andes Logistics · Derecho Mercantil y Societario · UCACUE</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<style>
+:root{
+  --papel:#f6f6f4;
+  --papel-alt:#ececea;
+  --blanco:#ffffff;
+  --tinta:#17181a;
+  --tinta-suave:#33353a;
+  --acento:#0a5757;
+  --acento-claro:#14807f;
+  --acento-tenue:#e2eeed;
+  --contra:#8a2b2b;
+  --contra-tenue:#f4e7e7;
+  --dorado:#8a6d1b;
+  --dorado-tenue:#fbf7e6;
+  --linea:#d0d0cd;
+  --nota:#474745;
+  --verde:#1b6e3f;
+  --verde-tenue:#e6f4ec;
+  --serif:Charter,"Georgia","Segoe UI",system-ui,sans-serif;
+  --titulo:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",sans-serif;
+  --mono:Consolas,Menlo,Monaco,"Courier New",monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;padding:0;background:var(--papel);color:var(--tinta);
+  font-family:var(--serif);font-size:17px;line-height:1.65;
+}
+h1,h2,h3,h4{font-family:var(--titulo);font-weight:600;line-height:1.2;margin:0}
+
+/* Header */
+.banda{background:var(--acento);color:#fff;padding:1.4rem 0;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.banda-int{
+  max-width:1100px;margin:0 auto;padding:0 1.2rem;
+  display:flex;align-items:center;justify-content:space-between;gap:1.2rem;flex-wrap:wrap;
+}
+.emisor{font-family:var(--titulo);font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:#cfe3e2;margin:0 0 .3rem}
+.rotulo{font-size:clamp(1.15rem,3vw,1.55rem);color:#fff}
+.sello{
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.4);border-radius:4px;
+  padding:.45rem .85rem;text-align:right;font-family:var(--titulo);font-size:.72rem;letter-spacing:.08em;
+}
+.sello b{display:block;font-size:.95rem;color:#fff;letter-spacing:.02em}
+
+.contenedor{max-width:1100px;margin:0 auto;padding:1.5rem 1.2rem 4rem}
+
+/* Navigation Steps */
+.pasos-nav{
+  display:flex;gap:.5rem;margin-bottom:2rem;background:var(--blanco);
+  padding:.6rem .8rem;border:1px solid var(--linea);border-radius:6px;
+  overflow-x:auto;box-shadow:0 1px 3px rgba(0,0,0,.03);
+}
+.paso-btn{
+  flex:1;min-width:140px;padding:.6rem .8rem;background:transparent;border:none;border-radius:4px;
+  font-family:var(--titulo);font-size:.82rem;font-weight:600;color:var(--nota);
+  text-align:center;cursor:pointer;transition:all .2s ease;display:flex;align-items:center;justify-content:center;gap:.4rem;
+}
+.paso-btn.activo{background:var(--acento);color:#fff}
+.paso-btn.completado{background:var(--acento-tenue);color:var(--acento)}
+
+/* Cards and Panels */
+.panel{
+  background:var(--blanco);border:1px solid var(--linea);border-radius:6px;
+  padding:2rem;margin-bottom:2rem;box-shadow:0 2px 6px rgba(0,0,0,.03);
+}
+.panel-cab{border-bottom:2px solid var(--acento);padding-bottom:.8rem;margin-bottom:1.5rem;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:.8rem}
+.panel-cab h2{font-size:1.35rem;color:var(--acento)}
+.badge{
+  font-family:var(--titulo);font-size:.7rem;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;padding:.2rem .6rem;border-radius:3px;
+}
+.badge-par{background:var(--acento-tenue);color:var(--acento);border:1px solid var(--acento-claro)}
+.badge-impar{background:var(--dorado-tenue);color:var(--dorado);border:1px solid #d4be72}
+
+/* Dialog Room */
+.sala-juntas{
+  background:linear-gradient(180deg,#1c232a 0%,#11161a 100%);
+  color:#f0f3f5;border-radius:8px;padding:1.8rem;margin-bottom:2rem;
+  border:1px solid #2e3842;box-shadow:inset 0 1px 1px rgba(255,255,255,.1);
+}
+.sala-cab{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;border-bottom:1px solid #2f3b46;padding-bottom:.8rem}
+.sala-cab h3{color:#64b5f6;font-size:1.15rem;display:flex;align-items:center;gap:.5rem}
+.personajes-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.2rem}
+.personaje-tarjeta{
+  background:#1a2228;border:1px solid #2f3e4d;border-radius:6px;padding:1.2rem;
+  display:flex;flex-direction:column;gap:.6rem;border-top:3px solid var(--acento-claro);
+}
+.personaje-cab{display:flex;align-items:center;gap:.8rem}
+.avatar{
+  width:44px;height:44px;border-radius:50%;background:#2a3a48;
+  display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:bold;color:#fff;
+  border:2px solid #4a637a;flex-shrink:0;
+}
+.personaje-info h4{font-size:.95rem;color:#ffffff;margin:0}
+.personaje-info span{font-family:var(--titulo);font-size:.74rem;color:#90a4ae;text-transform:uppercase;letter-spacing:.05em}
+.dialogo-texto{font-size:.92rem;line-height:1.55;color:#cfd8dc;background:#131a1f;padding:.8rem;border-radius:4px;border-left:3px solid #64b5f6;margin:0}
+
+/* Form Inputs */
+.campo{margin-bottom:1.2rem;display:flex;flex-direction:column;gap:.35rem}
+.campo label{font-family:var(--titulo);font-size:.82rem;font-weight:600;color:var(--tinta-suave)}
+.campo input, .campo select, .campo textarea{
+  font-family:var(--serif);font-size:1rem;padding:.7rem .9rem;
+  border:1px solid var(--linea);border-radius:4px;background:#fafaf8;color:var(--tinta);
+  transition:border-color .2s;
+}
+.campo input:focus, .campo textarea:focus{border-color:var(--acento);outline:none;background:#fff}
+.campo textarea{min-height:120px;resize:vertical;font-family:var(--serif);font-size:.95rem}
+
+/* Live Validator Box */
+.validador-caja{
+  background:#f9fbfb;border:1px solid var(--acento-claro);border-radius:6px;
+  padding:1.2rem 1.4rem;margin:1.5rem 0;
+}
+.validador-cab{display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem}
+.validador-cab h4{font-size:.9rem;text-transform:uppercase;letter-spacing:.1em;color:var(--acento);display:flex;align-items:center;gap:.4rem}
+.progreso-barra-bg{height:8px;background:#d8e8e7;border-radius:4px;overflow:hidden;margin-bottom:.8rem}
+.progreso-barra-fill{height:100%;width:0%;background:var(--acento);transition:width .4s ease}
+.checklist{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.5rem;font-family:var(--titulo);font-size:.8rem}
+.check-item{display:flex;align-items:center;gap:.4rem;color:var(--nota)}
+.check-item.ok{color:var(--verde);font-weight:600}
+.check-item.ok::before{content:"✔ ";color:var(--verde)}
+.check-item.pendiente::before{content:"○ ";color:var(--nota)}
+
+/* Buttons */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
+  font-family:var(--titulo);font-size:.9rem;font-weight:600;
+  background:var(--acento);color:#fff;border:1px solid var(--acento);
+  border-radius:4px;padding:.75rem 1.5rem;text-decoration:none;cursor:pointer;transition:all .2s;
+}
+.btn:hover{background:var(--acento-claro)}
+.btn-sec{background:transparent;color:var(--acento);border-color:var(--acento)}
+.btn-sec:hover{background:var(--acento-tenue)}
+.btn-grande{padding:.9rem 2rem;font-size:1.05rem}
+.acciones{display:flex;justify-content:space-between;gap:1rem;margin-top:2rem;flex-wrap:wrap}
+
+/* Questions section */
+.pregunta-card{
+  background:var(--papel);border:1px solid var(--linea);border-radius:6px;
+  padding:1.2rem 1.4rem;margin-bottom:1.2rem;
+}
+.pregunta-card h4{font-size:.98rem;margin-bottom:.8rem;color:var(--tinta)}
+.opcion-label{
+  display:flex;align-items:flex-start;gap:.6rem;padding:.5rem .7rem;
+  border-radius:4px;cursor:pointer;margin-bottom:.4rem;transition:background .15s;font-size:.92rem;
+}
+.opcion-label:hover{background:#e8eae8}
+.opcion-label input{margin-top:.3rem}
+
+/* PDF Preview Document */
+#documento-pdf{
+  background:#ffffff;color:#111111;padding:40px;font-family:"Times New Roman",Times,serif;
+  font-size:11.5pt;line-height:1.45;border:1px solid #ccc;box-shadow:0 0 10px rgba(0,0,0,.08);
+}
+.pdf-encabezado{text-align:center;border-bottom:2px solid #111;padding-bottom:10px;margin-bottom:20px}
+.pdf-encabezado h2{font-size:14pt;margin:0 0 4px;text-transform:uppercase}
+.pdf-encabezado p{font-size:9pt;margin:0;letter-spacing:.05em}
+.pdf-titulo{text-align:center;font-size:12pt;font-weight:bold;margin:15px 0}
+.pdf-seccion{font-weight:bold;margin-top:14px;margin-bottom:4px;text-transform:uppercase;font-size:11pt;border-bottom:1px solid #444}
+.pdf-parrafo{text-align:justify;margin:0 0 10px;font-size:11pt}
+.pdf-firmas{margin-top:35px;display:grid;grid-template-columns:1fr 1fr;gap:30px;page-break-inside:avoid}
+.pdf-linea-firma{border-top:1px solid #111;padding-top:5px;text-align:center;font-size:9.5pt}
+.pdf-watermark{text-align:center;font-size:8pt;color:#666;margin-top:25px;border-top:1px dashed #ccc;padding-top:6px;font-family:var(--mono)}
+
+/* Hidden utility */
+.oculto{display:none !important}
+
+@media print{
+  body{background:#fff}
+  .banda, .pasos-nav, .acciones, .validador-caja, .sala-juntas{display:none}
+  #documento-pdf{box-shadow:none;border:none;padding:0}
+}
+</style>
+</head>
+<body>
+
+<header class="banda">
+  <div class="banda-int">
+    <div>
+      <p class="emisor">Universidad Católica de Cuenca · Carrera de Derecho · Tercer Ciclo</p>
+      <h1 class="rotulo">Simulador Corporativo & Examen Final ABP (Caso Harvard)</h1>
+    </div>
+    <div class="sello">
+      Derecho Mercantil y Societario
+      <b>20 Puntos (8 Acta / 12 Oral)</b>
+    </div>
+  </div>
+</header>
+
+<main class="contenedor">
+
+  <!-- Navegación de Pasos -->
+  <nav class="pasos-nav">
+    <button class="paso-btn activo" id="btn-paso-1" onclick="irAPaso(1)">1. Asignación del Caso</button>
+    <button class="paso-btn" id="btn-paso-2" onclick="irAPaso(2)">2. Sala de Juntas</button>
+    <button class="paso-btn" id="btn-paso-3" onclick="irAPaso(3)">3. Redacción del Acta</button>
+    <button class="paso-btn" id="btn-paso-4" onclick="irAPaso(4)">4. Control Registral & Notarial</button>
+    <button class="paso-btn" id="btn-paso-5" onclick="irAPaso(5)">5. Descarga Acta PDF</button>
+  </nav>
+
+  <!-- ==================== PASO 1: ASIGNACIÓN ==================== -->
+  <section id="paso-1" class="panel">
+    <div class="panel-cab">
+      <h2>Paso 1: Identificación y Derivación Automática de Variante</h2>
+      <span class="badge badge-par" id="tipo-variante-badge">Ingrese Cédula</span>
+    </div>
+
+    <p>Bienvenido/a, colega. Ha sido designado/a <b>Secretario Ad-Hoc y Asesor Jurídico Corporativo</b> de la compañía <i>Andes Logistics & Agro-Tech S.A.S.</i>. Para acceder al expediente de la sesión extraordinaria universal de directorio y accionistas, ingrese sus datos institucionales.</p>
+
+    <div style="background:var(--acento-tenue);border-left:4px solid var(--acento);padding:1rem 1.2rem;border-radius:4px;margin-bottom:1.5rem;">
+      <p style="margin:0;font-size:.92rem;color:var(--tinta-suave);">
+        <b>Regla de Asignación Criptográfica:</b> De conformidad con el protocolo ABP, el último dígito de su cédula determina la variante del caso (Par: <i>Andes Venture Capital & Exportación a gran escala</i> / Impar: <i>Ángel Inversionista & Marketplace Agrícola</i>).
+      </p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem;">
+      <div class="campo">
+        <label for="est-nombre">Nombres y Apellidos Completos:</label>
+        <input type="text" id="est-nombre" placeholder="Ej. Abg. Juan Carlos Pérez Morales" oninput="procesarDatosEstudiante()">
+      </div>
+      <div class="campo">
+        <label for="est-cedula">Número de Cédula de Identidad:</label>
+        <input type="text" id="est-cedula" maxlength="10" placeholder="Ej. 0102030405" oninput="procesarDatosEstudiante()">
+      </div>
+      <div class="campo">
+        <label for="est-pareja">Compañero/a para Sustentación Oral (Pareja):</label>
+        <input type="text" id="est-pareja" placeholder="Ej. Abg. María Augusta Solís" oninput="procesarDatosEstudiante()">
+      </div>
+    </div>
+
+    <div id="expediente-resumen" class="oculto" style="margin-top:1.5rem;padding:1.2rem;background:#fbfbf9;border:1px solid var(--linea);border-radius:6px;">
+      <h3 style="font-size:1.05rem;color:var(--acento);margin-bottom:.5rem;">Resumen del Expediente Asignado: <span id="variante-titulo"></span></h3>
+      <div id="variante-detalles" style="font-size:.92rem;line-height:1.6;"></div>
+    </div>
+
+    <div class="acciones">
+      <div></div>
+      <button class="btn btn-grande" onclick="irAPaso(2)">Ingresar a la Sala de Juntas &rarr;</button>
+    </div>
+  </section>
+
+  <!-- ==================== PASO 2: SALA DE JUNTAS ==================== -->
+  <section id="paso-2" class="panel oculto">
+    <div class="panel-cab">
+      <h2>Paso 2: Sesión de Directorio y Debate en Vivo</h2>
+      <span class="badge badge-par" id="badge-paso-2">Variante Activa</span>
+    </div>
+
+    <div class="sala-juntas">
+      <div class="sala-cab">
+        <h3>🏛️ Sala Virtual de Juntas: Sede Cuenca · Andes Logistics & Agro-Tech S.A.S.</h3>
+        <span style="font-family:var(--titulo);font-size:.76rem;color:#90a4ae;">100% Capital Presente · Junta Universal Art. 238</span>
+      </div>
+
+      <p style="font-size:.92rem;color:#b0bec5;margin-bottom:1.5rem;">
+        Los tres socios accionistas se encuentran reunidos en la sala y requieren sus dictámenes legales inmediatos para tomar decisiones societarias cruciales:
+      </p>
+
+      <div class="personajes-grid">
+        <!-- Mateo Palacios -->
+        <div class="personaje-tarjeta">
+          <div class="personaje-cab">
+            <div class="avatar">MP</div>
+            <div class="personaje-info">
+              <h4>Ing. Mateo Palacios</h4>
+              <span>Presidente Ejecutivo (40% Acciones)</span>
+            </div>
+          </div>
+          <p class="dialogo-texto" id="dialogo-mateo">
+            "Abogado/a, nuestros clientes del Austro alegan que por comprar productos agrícolas o pagar mediante nuestra plataforma son consumidores protegidos y no comerciantes, pretendiendo no pagarnos intereses de mora mercantil. ¿Podemos cobrar intereses mercantiles bajo el Código de Comercio 2019?"
+          </p>
+        </div>
+
+        <!-- Valeria Cárdenas -->
+        <div class="personaje-tarjeta">
+          <div class="personaje-cab">
+            <div class="avatar">VC</div>
+            <div class="personaje-info">
+              <h4>Dra. Valeria Cárdenas</h4>
+              <span>Directora de Operaciones (35% Acciones)</span>
+            </div>
+          </div>
+          <p class="dialogo-texto" id="dialogo-valeria">
+            "Tenemos títulos valores impagos. El deudor nos contestó por carta que según el 'Art. 410' la deuda prescribió y que el avalista no responde por falta de protesto notarial. ¿Qué vía judicial tomamos y bajo qué artículos vigentes desvirtuamos esa trampa?"
+          </p>
+        </div>
+
+        <!-- Esteban Moscoso -->
+        <div class="personaje-tarjeta">
+          <div class="personaje-cab">
+            <div class="avatar">EM</div>
+            <div class="personaje-info">
+              <h4>Dr. Esteban Moscoso</h4>
+              <span>Socio Inversionista (25% Acciones)</span>
+            </div>
+          </div>
+          <p class="dialogo-texto" id="dialogo-esteban">
+            "Nos ofrecen millones de dólares de inversión pero nos exigen emitir acciones preferidas y salir a Bolsa de Valores. ¿Podemos hacerlo como SAS o debemos transformarnos a Compañía Anónima (S.A.)? Además, ¿la Supercías nos obligará a contratar Auditoría Externa?"
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="acciones">
+      <button class="btn btn-sec" onclick="irAPaso(1)">&larr; Volver al Paso 1</button>
+      <button class="btn btn-grande" onclick="irAPaso(3)">Proceder a Redactar el Acta & Dictamen &rarr;</button>
+    </div>
+  </section>
+
+  <!-- ==================== PASO 3: REDACCIÓN ==================== -->
+  <section id="paso-3" class="panel oculto">
+    <div class="panel-cab">
+      <h2>Paso 3: Redacción del Acta de Junta General Universal y Dictamen</h2>
+      <span class="badge badge-par">Control Supercías en Vivo</span>
+    </div>
+
+    <p style="font-size:.92rem;color:var(--nota);margin-bottom:1rem;">
+      <b>Instrucción Notarial y Registral:</b> Por exigencia estricta de la Superintendencia de Compañías (SCVS), cada acápite de deliberación y resolución debe repetir textualmente el encabezado del Orden del Día antes de asentar su dictamen técnico.
+    </p>
+
+    <!-- Validador en Vivo -->
+    <div class="validador-caja">
+      <div class="validador-cab">
+        <h4>🔍 Auditoría Jurídica Automática (Criterio Supercías & Código de Comercio)</h4>
+        <span id="validador-porcentaje" style="font-family:var(--titulo);font-weight:700;color:var(--acento);font-size:.9rem;">0% Cumplido</span>
+      </div>
+      <div class="progreso-barra-bg">
+        <div class="progreso-barra-fill" id="validador-barra"></div>
+      </div>
+      <div class="checklist" id="validador-checklist">
+        <div class="check-item pendiente" id="chk-art1">Arts. 1, 3, 7 u 8 (Comercio)</div>
+        <div class="check-item pendiente" id="chk-doctrina">Doctrina (Dávalos / Mantilla)</div>
+        <div class="check-item pendiente" id="chk-titulos">Arts. 113-115 / 186 (Títulos)</div>
+        <div class="check-item pendiente" id="chk-art238">Art. 238 (Junta Universal)</div>
+        <div class="check-item pendiente" id="chk-sociedades">Transformación S.A. / SAS (330)</div>
+        <div class="check-item pendiente" id="chk-auditoria">Auditoría Externa (Art. 318+)</div>
+      </div>
+    </div>
+
+    <!-- Campos de Entrada para el Acta -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.2rem;">
+      <div class="campo">
+        <label>Fecha de la Sesión:</label>
+        <input type="date" id="acta-fecha" value="2026-09-21" oninput="actualizarVistaPrevia()">
+      </div>
+      <div class="campo">
+        <label>Hora de Instalación / Cierre:</label>
+        <input type="text" id="acta-hora" value="10h00 a 13h30" oninput="actualizarVistaPrevia()">
+      </div>
+    </div>
+
+    <div class="campo">
+      <label>1. Constatación de Quórum y Cláusula Notarial de Junta Universal (Art. 238 Ley de Compañías):</label>
+      <textarea id="acta-quorum" oninput="actualizarVistaPrevia()">El Secretario Ad-Hoc constata la presencia del 100% del capital social integrado ($50.000,00 USD). Los accionistas resuelven unánimemente constituirse en Junta General Extraordinaria Universal de Accionistas, de conformidad con el artículo 238 de la Ley de Compañías, renunciando de manera expresa al requisito de convocatoria previa por la prensa o correo electrónico y aceptando tratar los puntos del Orden del Día.</textarea>
+    </div>
+
+    <!-- Punto 1 -->
+    <div class="campo">
+      <label style="color:var(--acento);"><b>PUNTO 1:</b> Informe jurídico y resolución sobre calificación de mercantilidad y Código de Comercio 2019:</label>
+      <textarea id="acta-p1" placeholder="Dictamine sobre la mercantilidad objetiva y mixta (Arts. 1, 3, 7 y 8 Código de Comercio 2019), tesis de Dávalos Torres (criterio formal) y cobro de intereses mercantiles..." oninput="actualizarVistaPrevia()"></textarea>
+    </div>
+
+    <!-- Punto 2 -->
+    <div class="campo">
+      <label style="color:var(--acento);"><b>PUNTO 2:</b> Informe jurídico y resolución sobre exigibilidad cambiaria y excepciones de prescripción:</label>
+      <textarea id="acta-p2" placeholder="Dictamine rechazando la invocación del derogado Art. 410 del Código de 1960, aplique Arts. 113-115 y 186 del Código 2019, fundamente la solidaridad del aval y la procedencia del Juicio Ejecutivo..." oninput="actualizarVistaPrevia()"></textarea>
+    </div>
+
+    <!-- Punto 3 -->
+    <div class="campo">
+      <label style="color:var(--acento);"><b>PUNTO 3:</b> Informe jurídico y resolución sobre oferta de inversión y transformación societaria (S.A. vs S.A.S.):</label>
+      <textarea id="acta-p3" placeholder="Analice la prohibición legal de cotizar en bolsa para la SAS, la procedencia de transformación a Sociedad Anónima (S.A.) bajo Arts. 143 y 330 Ley de Compañías, emisión de acciones preferidas y formalidades..." oninput="actualizarVistaPrevia()"></textarea>
+    </div>
+
+    <!-- Punto 4 -->
+    <div class="campo">
+      <label style="color:var(--acento);"><b>PUNTO 4:</b> Informe jurídico y resolución sobre Auditoría Externa y Blindaje Patrimonial:</label>
+      <textarea id="acta-p4" placeholder="Dictamine sobre la obligatoriedad de contratar Auditoría Externa al superar umbral de activos (Art. 318 Ley de Compañías), la limitación de responsabilidad frente a deudas laborales/tributarias tras reformas 2023 y el velo societario..." oninput="actualizarVistaPrevia()"></textarea>
+    </div>
+
+    <div class="acciones">
+      <button class="btn btn-sec" onclick="irAPaso(2)">&larr; Volver a la Sala</button>
+      <button class="btn btn-grande" onclick="irAPaso(4)">Validar Control Registral &rarr;</button>
+    </div>
+  </section>
+
+  <!-- ==================== PASO 4: CONTROL REGISTRAL ==================== -->
+  <section id="paso-4" class="panel oculto">
+    <div class="panel-cab">
+      <h2>Paso 4: Batería de Control Registral y Notarial (Examen Técnico)</h2>
+      <span class="badge badge-par">Evaluación de Rigor</span>
+    </div>
+
+    <p style="font-size:.92rem;color:var(--tinta-suave);margin-bottom:1.5rem;">
+      Para certificar la idoneidad registral del Acta antes de su protocolización y firma final, conteste las siguientes preguntas de control societario ecuatoriano:
+    </p>
+
+    <!-- Pregunta 1 -->
+    <div class="pregunta-card">
+      <h4>1. ¿Qué instrumento público formal se requiere para formalizar la Transformación de una S.A.S. a Sociedad Anónima (S.A.) tras la aprobación del Acta?</h4>
+      <label class="opcion-label">
+        <input type="radio" name="q1" value="a" onchange="verificarPreguntas()">
+        <span>a) Basta un documento privado firmado electrónicamente e ingresado al portal web de la Superintendencia.</span>
+      </label>
+      <label class="opcion-label">
+        <input type="radio" name="q1" value="b" onchange="verificarPreguntas()">
+        <span>b) <b>Escritura Pública otorgada ante Notario Público</b>, incorporando el Acta de Junta Universal y el balance especial de transformación, sujeta a posterior aprobación e inscripción registral.</span>
+      </label>
+      <label class="opcion-label">
+        <input type="radio" name="q1" value="c" onchange="verificarPreguntas()">
+        <span>c) Un acta simple de directorio protocolizada en la Cámara de Comercio.</span>
+      </label>
+    </div>
+
+    <!-- Pregunta 2 -->
+    <div class="pregunta-card">
+      <h4>2. ¿Cuál es el orden de entidades competentes para la aprobación e inscripción del acto societario de transformación a S.A.?</h4>
+      <label class="opcion-label">
+        <input type="radio" name="q2" value="a" onchange="verificarPreguntas()">
+        <span>a) Notaría Pública &rarr; Superintendencia de Compañías, Valores y Seguros (Resolución Aprobatoria) &rarr; Registro de Sociedades / Registro Mercantil.</span>
+      </label>
+      <label class="opcion-label">
+        <input type="radio" name="q2" value="b" onchange="verificarPreguntas()">
+        <span>b) Servicio de Rentas Internas (SRI) &rarr; Ministerio de Trabajo &rarr; Municipio de Cuenca.</span>
+      </label>
+      <label class="opcion-label">
+        <input type="radio" name="q2" value="c" onchange="verificarPreguntas()">
+        <span>c) Registro Mercantil directamente sin pasar por Notaría ni Superintendencia.</span>
+      </label>
+    </div>
+
+    <!-- Pregunta 3 -->
+    <div class="pregunta-card">
+      <h4>3. ¿Por qué es plenamente válida la renuncia a la convocatoria previa por prensa en esta sesión?</h4>
+      <label class="opcion-label">
+        <input type="radio" name="q3" value="a" onchange="verificarPreguntas()">
+        <span>a) Porque el Gerente General tiene la facultad unilateral de prescindir de la ley si hay urgencia económica.</span>
+      </label>
+      <label class="opcion-label">
+        <input type="radio" name="q3" value="b" onchange="verificarPreguntas()">
+        <span>b) Porque de conformidad con el <b>Art. 238 de la Ley de Compañías</b>, al estar presente el 100% del capital social y acordar unánimemente el orden del día, la junta se constituye legalmente en Universal.</span>
+      </label>
+      <label class="opcion-label">
+        <input type="radio" name="q3" value="c" onchange="verificarPreguntas()">
+        <span>c) Porque las compañías S.A.S. nunca requieren convocatoria bajo ningún concepto.</span>
+      </label>
+    </div>
+
+    <div id="feedback-preguntas" style="display:none;padding:1rem;border-radius:4px;margin-top:1rem;"></div>
+
+    <div class="acciones">
+      <button class="btn btn-sec" onclick="irAPaso(3)">&larr; Volver a la Redacción</button>
+      <button class="btn btn-grande" id="btn-ir-paso-5" onclick="irAPaso(5)">Generar Acta Oficial PDF &rarr;</button>
+    </div>
+  </section>
+
+  <!-- ==================== PASO 5: VISTA PREVIA Y PDF ==================== -->
+  <section id="paso-5" class="panel oculto">
+    <div class="panel-cab">
+      <h2>Paso 5: Vista Previa y Descarga del Acta de Junta General</h2>
+      <button class="btn" onclick="descargarPDF()">📥 Descargar Acta en PDF</button>
+    </div>
+
+    <div style="background:var(--verde-tenue);border:1px solid #a3d9b5;padding:1rem 1.2rem;border-radius:4px;margin-bottom:1.5rem;">
+      <p style="margin:0;font-size:.92rem;color:#0e4a25;">
+        <b>¡Expediente Validado!</b> Revise a continuación la transcripción formal de su Acta de Junta General. Este documento cuenta con su código de autenticidad criptográfica y las firmas de los accionistas. Descargue el PDF y súbalo a la plataforma Moodle de la UCACUE (8/20 pts). Prepárese para la sustentación oral socrática (12/20 pts).
+      </p>
+    </div>
+
+    <!-- Documento Renderizado para PDF -->
+    <div id="documento-pdf">
+      <div class="pdf-encabezado">
+        <h2>ANDES LOGISTICS & AGRO-TECH S.A.S.</h2>
+        <p>R.U.C. 0190458712001 · MATRIZ: CUENCA, AZUAY - ECUADOR</p>
+        <p style="font-size:8pt;color:#555;margin-top:2px;">EXPEDIENTE SOCIETARIO SCVS: N° 748291 · EVALUACIÓN ACADÉMICA UCACUE</p>
+      </div>
+
+      <div class="pdf-titulo">
+        ACTA DE LA JUNTA GENERAL EXTRAORDINARIA UNIVERSAL DE ACCIONISTAS<br>
+        DE LA COMPAÑÍA "ANDES LOGISTICS & AGRO-TECH S.A.S."
+      </div>
+
+      <p class="pdf-parrafo">
+        En la ciudad de Cuenca, provincia del Azuay, a los <span id="pdf-txt-fecha">21 de septiembre de 2026</span>, siendo las <span id="pdf-txt-hora">10h00</span>, en las instalaciones de la sede principal de la compañía, se reúnen los siguientes accionistas que representan el cien por ciento (100%) del capital social suscrito y pagado de la compañía ANDES LOGISTICS & AGRO-TECH S.A.S.:
+      </p>
+
+      <p class="pdf-parrafo" style="padding-left:15px;">
+        1. <b>ING. MATEO PALACIOS</b>, por sus propios derechos, propietario de 20.000 acciones ordinarias y nominativas de $1,00 USD cada una, representando el 40% del capital integrado.<br>
+        2. <b>DRA. VALERIA CÁRDENAS</b>, por sus propios derechos, propietaria de 17.500 acciones ordinarias y nominativas de $1,00 USD cada una, representando el 35% del capital integrado.<br>
+        3. <b>DR. ESTEBAN MOSCOSO</b>, por sus propios derechos, propietario de 12.500 acciones ordinarias y nominativas de $1,00 USD cada una, representando el 25% del capital integrado.
+      </p>
+
+      <p class="pdf-parrafo">
+        Preside la sesión el Ing. Mateo Palacios, en su calidad de Presidente Ejecutivo, y actúa como Secretario Ad-Hoc y Asesor Jurídico Corporativo el/la <b id="pdf-txt-estudiante">Abg. [Nombre del Estudiante]</b> (C.I. <span id="pdf-txt-cedula">[Cédula]</span>).
+      </p>
+
+      <div class="pdf-seccion">1. CONSTATACIÓN DEL QUÓRUM Y VALIDEZ DE LA SESIÓN (JUNTA UNIVERSAL)</div>
+      <p class="pdf-parrafo" id="pdf-txt-quorum"></p>
+
+      <div class="pdf-seccion">2. ORDEN DEL DÍA</div>
+      <p class="pdf-parrafo">
+        El Presidente da lectura a los puntos del Orden del Día, aprobados por unanimidad:<br>
+        <b>PUNTO 1:</b> Informe jurídico y resolución sobre la calificación de mercantilidad de los contratos de distribución y e-commerce con clientes del Austro y aplicación del Código de Comercio (2019).<br>
+        <b>PUNTO 2:</b> Informe jurídico y resolución sobre la exigibilidad cambiaria de títulos valores impagos y rechazo de excepciones de prescripción.<br>
+        <b>PUNTO 3:</b> Informe jurídico y resolución sobre la oferta de inversión de capital y la procedencia de la transformación societaria de S.A.S. a Compañía Anónima (S.A.).<br>
+        <b>PUNTO 4:</b> Informe jurídico y resolución sobre la obligatoriedad de fiscalización mediante Auditoría Externa y el alcance del régimen de responsabilidad patrimonial y velo corporativo.
+      </p>
+
+      <div class="pdf-seccion">3. DELIBERACIONES Y DICTAMEN JURÍDICO DEL ASESOR LEGAL</div>
+      
+      <p class="pdf-parrafo">
+        <b>PUNTO 1: Informe jurídico y resolución sobre la calificación de mercantilidad de los contratos de distribución y e-commerce con clientes del Austro y aplicación del Código de Comercio (2019).</b><br>
+        Tomó la palabra el Asesor Jurídico Corporativo y Secretario Ad-Hoc, quien dictaminó:<br>
+        <span id="pdf-txt-p1" style="white-space:pre-wrap;"></span>
+      </p>
+
+      <p class="pdf-parrafo">
+        <b>PUNTO 2: Informe jurídico y resolución sobre la exigibilidad cambiaria de títulos valores impagos y rechazo de excepciones de prescripción.</b><br>
+        Tomó la palabra el Asesor Jurídico Corporativo y Secretario Ad-Hoc, quien dictaminó:<br>
+        <span id="pdf-txt-p2" style="white-space:pre-wrap;"></span>
+      </p>
+
+      <p class="pdf-parrafo">
+        <b>PUNTO 3: Informe jurídico y resolución sobre la oferta de inversión de capital y la procedencia de la transformación societaria de S.A.S. a Compañía Anónima (S.A.).</b><br>
+        Tomó la palabra el Asesor Jurídico Corporativo y Secretario Ad-Hoc, quien dictaminó:<br>
+        <span id="pdf-txt-p3" style="white-space:pre-wrap;"></span>
+      </p>
+
+      <p class="pdf-parrafo">
+        <b>PUNTO 4: Informe jurídico y resolución sobre la obligatoriedad de fiscalización mediante Auditoría Externa y el alcance del régimen de responsabilidad patrimonial y velo corporativo.</b><br>
+        Tomó la palabra el Asesor Jurídico Corporativo y Secretario Ad-Hoc, quien dictaminó:<br>
+        <span id="pdf-txt-p4" style="white-space:pre-wrap;"></span>
+      </p>
+
+      <div class="pdf-seccion">4. RESOLUCIONES DE LA JUNTA GENERAL</div>
+      <p class="pdf-parrafo">
+        Luego de amplias deliberaciones basadas en el dictamen legal precedente, la Junta General de Accionistas RESUELVE por unanimidad:<br>
+        <b>RESOLUCIÓN PRIMERA:</b> Aprobar en su totalidad el informe de calificación de mercantilidad, ratificando la exigibilidad de los intereses moratorios comerciales.<br>
+        <b>RESOLUCIÓN SEGUNDA:</b> Disponer el inicio inmediato del Juicio Ejecutivo cambiario contra el deudor principal y el avalista solidario por el importe total.<br>
+        <b>RESOLUCIÓN TERCERA:</b> Aprobar la operación de capitalización y facultar la formalización de la transformación societaria mediante Escritura Pública ante Notario y trámite registral de ley.<br>
+        <b>RESOLUCIÓN CUARTA:</b> Designar una firma auditora calificada ante la SCVS para el ejercicio económico y ratificar el régimen de responsabilidad limitada de los accionistas.
+      </p>
+
+      <div class="pdf-seccion">5. CIERRE DE LA SESIÓN Y FIRMAS DE CONSTANCIA</div>
+      <p class="pdf-parrafo">
+        No habiendo otro asunto que tratar, se concede un receso para la redacción de la presente acta. Reinstalada la sesión con el mismo quórum, el texto es leído íntegramente y aprobado por unanimidad sin modificaciones. Se levanta la sesión, firmando para constancia todos los concurrentes.
+      </p>
+
+      <div class="pdf-firmas">
+        <div class="pdf-linea-firma">
+          <b>ING. MATEO PALACIOS</b><br>
+          Presidente Ejecutivo / Accionista
+        </div>
+        <div class="pdf-linea-firma">
+          <b>DRA. VALERIA CÁRDENAS</b><br>
+          Directora de Operaciones / Accionista
+        </div>
+        <div class="pdf-linea-firma">
+          <b>DR. ESTEBAN MOSCOSO</b><br>
+          Socio Inversionista / Accionista
+        </div>
+        <div class="pdf-linea-firma">
+          <b id="pdf-txt-firma-nombre">Abg. [Nombre del Estudiante]</b><br>
+          Secretario Ad-Hoc / Asesor Jurídico Corporativo
+        </div>
+      </div>
+
+      <div class="pdf-watermark">
+        DOCUMENTO OFICIAL GENERADO EN EL SIMULADOR ABP UCACUE · DERECHO MERCANTIL Y SOCIETARIO<br>
+        VERIFICACIÓN HASH: <span id="pdf-hash">SHA-256-PENDIENTE</span> · FECHA/HORA: <span id="pdf-timestamp"></span><br>
+        PAREJA DE SUSTENTACIÓN REGISTRADA: <span id="pdf-pareja">[No asignada]</span>
+      </div>
+    </div>
+
+    <div class="acciones">
+      <button class="btn btn-sec" onclick="irAPaso(4)">&larr; Volver al Control Registral</button>
+      <button class="btn btn-grande" onclick="descargarPDF()">📥 Descargar Acta en PDF (8 Pts)</button>
+    </div>
+  </section>
+
+</main>
+
+<script>
+var estado = {
+  pasoActual: 1,
+  nombre: '',
+  cedula: '',
+  pareja: '',
+  esPar: true,
+  preguntasCorrectas: false
+};
+
+function procesarDatosEstudiante() {
+  estado.nombre = document.getElementById('est-nombre').value.trim();
+  estado.cedula = document.getElementById('est-cedula').value.trim();
+  estado.pareja = document.getElementById('est-pareja').value.trim();
+
+  var badge = document.getElementById('tipo-variante-badge');
+  var resumen = document.getElementById('expediente-resumen');
+  var varTitulo = document.getElementById('variante-titulo');
+  var varDetalles = document.getElementById('variante-detalles');
+
+  if (estado.cedula.length >= 1) {
+    var ultimoDigito = parseInt(estado.cedula.slice(-1));
+    estado.esPar = (ultimoDigito % 2 === 0);
+
+    resumen.classList.remove('oculto');
+
+    if (estado.esPar) {
+      badge.className = 'badge badge-par';
+      badge.textContent = 'Variante A (Cédula Par)';
+      varTitulo.textContent = 'Variante A · Andes Venture Capital & Juicio Cambiario Pagaré ($150.000 USD)';
+      varDetalles.innerHTML = '<b>Detalles de la variante:</b><br>' +
+        '• <b>Deuda Comercial:</b> $150.000 USD adeudados por cadenas de distribución mayorista del Austro.<br>' +
+        '• <b>Título Valor:</b> Pagaré a la orden con aval solidario. El librador invoca prescripción alegando falta de protesto notarial.<br>' +
+        '• <b>Operación Societaria:</b> Oferta de $2.000.000 USD del fondo "Andes Venture Capital" condicionada a cotizar en Bolsa de Valores (Exige transformación a S.A.).<br>' +
+        '• <b>Activos Totales:</b> $1.200.000 USD (Supera ampliamente el umbral para Auditoría Externa obligatoria).';
+      
+      document.getElementById('dialogo-valeria').innerHTML = '"Abogado/a, nos deben <b>$150.000 USD</b> respaldados en un <b>Pagaré a la Orden</b> con aval. El deudor sostiene que el pagaré caducó porque no hicimos protesto notarial. ¿Qué acciones iniciamos de acuerdo a los Arts. 113-115 y 186 del Código de Comercio 2019?"';
+      document.getElementById('dialogo-esteban').innerHTML = '"Andes Venture Capital Fund nos ofrece <b>$2.000.000 USD</b> pero nos exige cotizar en la Bolsa de Valores de Quito/Guayaquil. Como SAS tenemos prohibición legal expresa de cotizar en bolsa. ¿Cómo estructuramos la transformación a Compañía Anónima (S.A.) bajo los Arts. 143 y 330 de la Ley de Compañías?"';
+    } else {
+      badge.className = 'badge badge-impar';
+      badge.textContent = 'Variante B (Cédula Impar)';
+      varTitulo.textContent = 'Variante B · Inversor Ángel Privado & Juicio Cambiario Letra ($180.000 USD)';
+      varDetalles.innerHTML = '<b>Detalles de la variante:</b><br>' +
+        '• <b>Deuda Comercial:</b> $180.000 USD adeudados por productores y distribuidores agrícolas en marketplace regional.<br>' +
+        '• <b>Título Valor:</b> Letra de Cambio con firma en blanco de avalista. El librador alega erróneamente el Art. 410 del Código derogado de 1960.<br>' +
+        '• <b>Operación Societaria:</b> Oferta de $1.500.000 USD de Inversor Ángel privado con emisión de acciones preferidas y voto múltiple (Mantenimiento y reforma estatutaria de S.A.S.).<br>' +
+        '• <b>Activos Totales:</b> $850.000 USD (Supera el umbral de $500k fijado por la SCVS para Auditoría Externa).';
+      
+      document.getElementById('dialogo-valeria').innerHTML = '"Colega, nos adeudan <b>$180.000 USD</b> en una <b>Letra de Cambio</b> aceptada. El demandado cita una norma derogada del año 1960 pretendiendo desconocer el aval. ¿Cómo aplicamos los Arts. 113-115 del Código de Comercio vigente para demandar por la vía ejecutiva?"';
+      document.getElementById('dialogo-esteban').innerHTML = '"Un Inversor Ángel nos ofrece <b>$1.500.000 USD</b> en una ronda privada y pide acciones preferidas con voto múltiple sin salir a bolsa. ¿Podemos mantener la estructura S.A.S. al amparo de la Sección Innumerada de la Ley de Compañías o requerimos transformarnos?"';
+    }
+  } else {
+    badge.className = 'badge badge-par';
+    badge.textContent = 'Ingrese Cédula';
+    resumen.classList.add('oculto');
+  }
+}
+
+function irAPaso(paso) {
+  if (paso > 1 && (!estado.nombre || !estado.cedula)) {
+    alert('Por favor ingrese su Nombre y Número de Cédula antes de continuar.');
+    return;
+  }
+  if (paso === 5 && !estado.preguntasCorrectas) {
+    alert('Debe responder y verificar las preguntas del Control Registral antes de generar el Acta Oficial.');
+    return;
+  }
+
+  for (var i = 1; i <= 5; i++) {
+    var p = document.getElementById('paso-' + i);
+    var b = document.getElementById('btn-paso-' + i);
+    if (p) p.classList.add('oculto');
+    if (b) {
+      b.classList.remove('activo');
+      if (i < paso) b.classList.add('completado');
+    }
+  }
+
+  var actualP = document.getElementById('paso-' + paso);
+  var actualB = document.getElementById('btn-paso-' + paso);
+  if (actualP) actualP.classList.remove('oculto');
+  if (actualB) {
+    actualB.classList.add('activo');
+    actualB.classList.remove('completado');
+  }
+
+  estado.pasoActual = paso;
+  window.scrollTo({top: 0, behavior: 'smooth'});
+
+  if (paso === 3 || paso === 5) {
+    actualizarVistaPrevia();
+  }
+}
+
+function actualizarVistaPrevia() {
+  var p1 = document.getElementById('acta-p1').value;
+  var p2 = document.getElementById('acta-p2').value;
+  var p3 = document.getElementById('acta-p3').value;
+  var p4 = document.getElementById('acta-p4').value;
+  var quorum = document.getElementById('acta-quorum').value;
+  var fecha = document.getElementById('acta-fecha').value;
+  var hora = document.getElementById('acta-hora').value;
+
+  // Actualizar Live Validator
+  var textoTotal = (quorum + ' ' + p1 + ' ' + p2 + ' ' + p3 + ' ' + p4).toLowerCase();
+
+  var checks = {
+    art1: /art(í|i)culo\s*(1|3|7|8)|art\.\s*(1|3|7|8)|c(ó|o)digo\s*de\s*comercio/i.test(textoTotal),
+    doctrina: /d(á|a)valos|mantilla|formal|mixto|unilateral/i.test(textoTotal),
+    titulos: /113|114|115|186|pagar(é|e)|letra|ejecutivo|solidar/i.test(textoTotal),
+    art238: /238|universal|renuncia.*convocatoria|cien por ciento|100%/i.test(textoTotal),
+    sociedades: /330|143|transformaci(ó|o)n|s\.a\.|bolsa|preferid/i.test(textoTotal),
+    auditoria: /318|auditor(í|i)a|externa|activo|responsabilidad|velo/i.test(textoTotal)
+  };
+
+  var okCount = 0;
+  var totalCount = 6;
+  for (var k in checks) {
+    var el = document.getElementById('chk-' + k);
+    if (checks[k]) {
+      el.className = 'check-item ok';
+      okCount++;
+    } else {
+      el.className = 'check-item pendiente';
+    }
+  }
+
+  var porcentaje = Math.round((okCount / totalCount) * 100);
+  document.getElementById('validador-porcentaje').textContent = porcentaje + '% Cumplido';
+  document.getElementById('validador-barra').style.width = porcentaje + '%';
+
+  // Actualizar documento PDF
+  document.getElementById('pdf-txt-estudiante').textContent = estado.nombre || '[Nombre del Estudiante]';
+  document.getElementById('pdf-txt-cedula').textContent = estado.cedula || '[Cédula]';
+  document.getElementById('pdf-txt-firma-nombre').textContent = estado.nombre ? 'Abg. ' + estado.nombre : 'Abg. [Nombre del Estudiante]';
+  document.getElementById('pdf-txt-fecha').textContent = fecha;
+  document.getElementById('pdf-txt-hora').textContent = hora;
+  document.getElementById('pdf-txt-quorum').textContent = quorum;
+  document.getElementById('pdf-txt-p1').textContent = p1 || '[Pendiente de redacción por el estudiante]';
+  document.getElementById('pdf-txt-p2').textContent = p2 || '[Pendiente de redacción por el estudiante]';
+  document.getElementById('pdf-txt-p3').textContent = p3 || '[Pendiente de redacción por el estudiante]';
+  document.getElementById('pdf-txt-p4').textContent = p4 || '[Pendiente de redacción por el estudiante]';
+  document.getElementById('pdf-pareja').textContent = estado.pareja || 'Individual / Por asignar';
+
+  // Generar Hash Simulado
+  var seed = (estado.cedula + estado.nombre + fecha + hora + p1.length + p2.length).split('').reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
+  var hashHex = 'UCACUE-ABP-' + Math.abs(seed).toString(16).toUpperCase().padStart(8, '0') + '-' + Math.abs(seed*31).toString(16).toUpperCase().padStart(6, '0');
+  document.getElementById('pdf-hash').textContent = hashHex;
+  document.getElementById('pdf-timestamp').textContent = new Date().toLocaleString('es-EC');
+}
+
+function verificarPreguntas() {
+  var q1 = document.querySelector('input[name="q1"]:checked');
+  var q2 = document.querySelector('input[name="q2"]:checked');
+  var q3 = document.querySelector('input[name="q3"]:checked');
+
+  var fb = document.getElementById('feedback-preguntas');
+
+  if (q1 && q2 && q3) {
+    if (q1.value === 'b' && q2.value === 'a' && q3.value === 'b') {
+      fb.style.display = 'block';
+      fb.style.background = 'var(--verde-tenue)';
+      fb.style.border = '1px solid var(--verde)';
+      fb.style.color = '#0e4a25';
+      fb.innerHTML = '<b>✔ ¡Excelente! Todas las respuestas de control registral son correctas:</b><br>' +
+        '1. La transformación a S.A. requiere solemnidad de <b>Escritura Pública Notarial</b>.<br>' +
+        '2. El trámite formal fluye ante Notaría &rarr; Resolución Supercías &rarr; Registro Mercantil/Sociedades.<br>' +
+        '3. La renuncia expresa a la convocatoria previa es 100% legal por tratarse de <b>Junta Universal (Art. 238 Ley de Compañías)</b>.<br>' +
+        'Ya puede avanzar a la emisión del PDF final.';
+      estado.preguntasCorrectas = true;
+    } else {
+      fb.style.display = 'block';
+      fb.style.background = 'var(--contra-tenue)';
+      fb.style.border = '1px solid var(--contra)';
+      fb.style.color = 'var(--contra)';
+      fb.innerHTML = '<b>⚠ Atención:</b> Alguna de las respuestas seleccionadas no corresponde a la normativa societaria y registral ecuatoriana. Revise los conceptos de Escritura Pública, trámite en Superintendencia y Junta Universal (Art. 238).';
+      estado.preguntasCorrectas = false;
+    }
+  }
+}
+
+function descargarPDF() {
+  actualizarVistaPrevia();
+  var element = document.getElementById('documento-pdf');
+  var opt = {
+    margin: [10, 10, 10, 10],
+    filename: 'Acta_Caso_Harvard_AndesLogistics_' + (estado.cedula || 'UCACUE') + '.pdf',
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+  html2pdf().set(opt).from(element).save();
+}
+</script>
+
+</body>
+</html>
