@@ -1035,23 +1035,47 @@ function preparaActa(dictamen, codigo, fin, minutos){
 function descargaActa(){
   const boton = document.getElementById('btn-pdf');
   const acta  = document.getElementById('acta');
-  boton.disabled = true; boton.textContent = 'Generando…';
-  acta.style.display = 'block';
+  const banda = document.querySelector('.banda');
+  const hoja  = document.querySelector('.hoja');
+  const scrollPrevio = window.scrollY;
 
-  html2pdf().set({
-    margin: 10,
-    filename: 'Acta_Foro_B1_' + alumno.ced + '.pdf',
-    image: { type:'jpeg', quality:0.96 },
-    html2canvas: { scale:2, useCORS:true },
-    jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
-    pagebreak: { mode:['avoid-all','css'] }
-  }).from(acta).save().then(() => {
-    acta.style.display = 'none';
-    boton.disabled = false; boton.textContent = 'Descargar el acta en PDF';
-  }).catch(() => {
-    acta.style.display = 'none';
-    boton.disabled = false; boton.textContent = 'Reintentar la descarga';
-  });
+  boton.disabled = true; boton.textContent = 'Generando…';
+
+  // POR QUÉ SE OCULTA LA PÁGINA ANTES DE RENDERIZAR
+  // html2canvas captura en coordenadas de documento, no del elemento. Con el
+  // foro completo por encima, el acta queda a miles de píxeles del inicio y el
+  // lienzo sale EN BLANCO. Medido sobre el sitio publicado: con la página
+  // visible, cero píxeles de tinta; ocultándola y subiendo al inicio, 3.923.
+  // El acta salía en blanco por esto, no por falta de contenido.
+  banda.style.display = 'none';
+  hoja.style.display  = 'none';
+  acta.style.display  = 'block';
+  window.scrollTo(0, 0);
+
+  const restaurar = () => {
+    acta.style.display  = 'none';
+    banda.style.display = '';
+    hoja.style.display  = '';
+    window.scrollTo(0, scrollPrevio);
+  };
+
+  // Un respiro para que el navegador recomponga antes de fotografiar.
+  setTimeout(() => {
+    html2pdf().set({
+      margin: 10,
+      filename: 'Acta_Foro_B1_' + alumno.ced + '.pdf',
+      image: { type:'jpeg', quality:0.96 },
+      html2canvas: { scale:2, useCORS:true, scrollX:0, scrollY:0 },
+      jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
+      pagebreak: { mode:['avoid-all','css'] }
+    }).from(acta).save().then(() => {
+      restaurar();
+      boton.disabled = false; boton.textContent = 'Descargar el acta en PDF';
+    }).catch(() => {
+      restaurar();
+      boton.disabled = false; boton.textContent = 'Reintentar la descarga';
+    });
+  }, 350);
 }
 
 // Aviso al cerrar con el debate a medias.
