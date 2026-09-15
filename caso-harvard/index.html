@@ -608,7 +608,8 @@ h1,h2,h3,h4{font-family:var(--titulo);font-weight:600;line-height:1.2;margin:0}
       <div class="pdf-watermark">
         DOCUMENTO OFICIAL GENERADO EN EL SIMULADOR ABP UCACUE · DERECHO MERCANTIL Y SOCIETARIO<br>
         VERIFICACIÓN HASH: <span id="pdf-hash">SHA-256-PENDIENTE</span> · FECHA/HORA: <span id="pdf-timestamp"></span><br>
-        PAREJA DE SUSTENTACIÓN REGISTRADA: <span id="pdf-pareja">[No asignada]</span>
+        PAREJA DE SUSTENTACIÓN REGISTRADA: <span id="pdf-pareja">[No asignada]</span><br>
+        CONTROL REGISTRAL: <span id="pdf-control">sin rendir</span>
       </div>
     </div>
 
@@ -839,6 +840,16 @@ function actualizarVistaPrevia() {
   var hashHex = 'UCACUE-ABP-' + Math.abs(seed).toString(16).toUpperCase().padStart(8, '0') + '-' + Math.abs(seed*31).toString(16).toUpperCase().padStart(6, '0');
   document.getElementById('pdf-hash').textContent = hashHex;
   document.getElementById('pdf-timestamp').textContent = new Date().toLocaleString('es-EC');
+
+  var ctrl = document.getElementById('pdf-control');
+  if (ctrl) {
+    if (estado.controlTotal) {
+      ctrl.textContent = estado.controlAciertos + ' de ' + estado.controlTotal +
+        ' correctas  ·  respuestas marcadas: ' + estado.controlMarcadas;
+    } else {
+      ctrl.textContent = 'sin rendir';
+    }
+  }
 }
 
 function verificarPreguntas() {
@@ -847,14 +858,22 @@ function verificarPreguntas() {
   var CLAVE = { q1: 'c', q2: 'b', q3: 'c', q4: 'a', q5: 'b' };
   var nombres = ['q1', 'q2', 'q3', 'q4', 'q5'];
 
-  var respondidas = 0, aciertos = 0;
+  var respondidas = 0, aciertos = 0, marcadas = [];
   nombres.forEach(function (n) {
     var sel = document.querySelector('input[name="' + n + '"]:checked');
     if (sel) {
       respondidas++;
+      marcadas.push(n + '=' + sel.value);
       if (sel.value === CLAVE[n]) aciertos++;
+    } else {
+      marcadas.push(n + '=-');
     }
   });
+  // Se guarda para que el acta deje constancia y el docente no tenga que
+  // fiarse de la palabra del estudiante.
+  estado.controlAciertos = aciertos;
+  estado.controlTotal = nombres.length;
+  estado.controlMarcadas = marcadas.join(' ');
 
   var fb = document.getElementById('feedback-preguntas');
   if (respondidas < nombres.length) {
