@@ -607,7 +607,7 @@ h1,h2,h3,h4{font-family:var(--titulo);font-weight:600;line-height:1.2;margin:0}
 
       <div class="pdf-watermark">
         DOCUMENTO OFICIAL GENERADO EN EL SIMULADOR ABP UCACUE · DERECHO MERCANTIL Y SOCIETARIO<br>
-        VERIFICACIÓN HASH: <span id="pdf-hash">SHA-256-PENDIENTE</span> · FECHA/HORA: <span id="pdf-timestamp"></span><br>
+        CÓDIGO DEL DOCUMENTO: <span id="pdf-hash">sin generar</span> · FECHA/HORA: <span id="pdf-timestamp"></span><br>
         PAREJA DE SUSTENTACIÓN REGISTRADA: <span id="pdf-pareja">[No asignada]</span><br>
         CONTROL REGISTRAL: <span id="pdf-control">sin rendir</span>
       </div>
@@ -844,8 +844,9 @@ function actualizarVistaPrevia() {
   var ctrl = document.getElementById('pdf-control');
   if (ctrl) {
     if (estado.controlTotal) {
-      ctrl.textContent = estado.controlAciertos + ' de ' + estado.controlTotal +
-        ' correctas  ·  respuestas marcadas: ' + estado.controlMarcadas;
+      ctrl.innerHTML = estado.controlAciertos + ' de ' + estado.controlTotal +
+        ' correctas<br>respuestas marcadas: ' +
+        estado.controlMarcadas.split(' · ').join(' &nbsp;·&nbsp; ');
     } else {
       ctrl.textContent = 'sin rendir';
     }
@@ -858,22 +859,32 @@ function verificarPreguntas() {
   var CLAVE = { q1: 'b', q2: 'b', q3: 'c', q4: 'a', q5: 'b' };
   var nombres = ['q1', 'q2', 'q3', 'q4', 'q5'];
 
+  // Rotulo corto de cada pregunta, para que el pie del acta se entienda sin
+  // tener la bateria delante. El formato «qN=x» se conserva intacto porque es
+  // el que lee el visor de correccion del docente.
+  var ROTULOS = {
+    q1: 'solemnidad de la transformacion',
+    q2: 'umbral de votacion',
+    q3: 'junta universal, Art. 238',
+    q4: 'el Art. 410 derogado',
+    q5: 'como se citan los arts. de la S.A.S.'
+  };
+
   var respondidas = 0, aciertos = 0, marcadas = [];
   nombres.forEach(function (n) {
     var sel = document.querySelector('input[name="' + n + '"]:checked');
+    var valor = sel ? sel.value : '-';
     if (sel) {
       respondidas++;
-      marcadas.push(n + '=' + sel.value);
       if (sel.value === CLAVE[n]) aciertos++;
-    } else {
-      marcadas.push(n + '=-');
     }
+    marcadas.push(n + '=' + valor + ' (' + ROTULOS[n] + ')');
   });
   // Se guarda para que el acta deje constancia y el docente no tenga que
   // fiarse de la palabra del estudiante.
   estado.controlAciertos = aciertos;
   estado.controlTotal = nombres.length;
-  estado.controlMarcadas = marcadas.join(' ');
+  estado.controlMarcadas = marcadas.join(' · ');
 
   var fb = document.getElementById('feedback-preguntas');
   if (respondidas < nombres.length) {
