@@ -407,18 +407,18 @@ h1,h2,h3,h4{font-family:var(--titulo);font-weight:600;line-height:1.2;margin:0}
     </p>
 
     <div class="pregunta-card">
-      <h4>1. Andes Logistics es una S.A.S. que resuelve transformarse en Compa&ntilde;&iacute;a An&oacute;nima. &iquest;Qu&eacute; solemnidad exige la ley <b>y con qu&eacute; fundamento</b>?</h4>
+      <h4>1. Andes Logistics es una S.A.S. que resuelve transformarse en Compa&ntilde;&iacute;a An&oacute;nima, capitalizando un aporte <b>en dinero</b> de USD 2.000.000. &iquest;En qu&eacute; instrumento debe constar la operaci&oacute;n <b>y con qu&eacute; fundamento</b>?</h4>
       <label class="opcion-label">
         <input type="radio" name="q1" value="a" onchange="verificarPreguntas()">
-        <span>a) Documento privado inscrito en el Registro de Sociedades, porque toda actuaci&oacute;n de una S.A.S. se instrumenta de ese modo, tal como su constituci&oacute;n.</span>
+        <span>a) En <b>escritura p&uacute;blica ante notario, sin alternativa</b>: la Secci&oacute;n Innumerada remite a las solemnidades de constituci&oacute;n de la compa&ntilde;&iacute;a cuya forma se adopta, y el art&iacute;culo 146 exige escritura p&uacute;blica para la an&oacute;nima.</span>
       </label>
       <label class="opcion-label">
         <input type="radio" name="q1" value="b" onchange="verificarPreguntas()">
-        <span>b) Escritura p&uacute;blica, porque los art&iacute;culos 330 y siguientes de la Ley de Compa&ntilde;&iacute;as la exigen para toda transformaci&oacute;n societaria.</span>
+        <span>b) <b>Indistintamente en escritura p&uacute;blica o en documento privado.</b> La remisi&oacute;n de la Secci&oacute;n Innumerada conduce al art&iacute;culo 146, pero la <b>Disposici&oacute;n General Tercera</b> (R.O. 269-S, 15-III-2023) dispone que toda menci&oacute;n de la ley a la escritura p&uacute;blica para la constituci&oacute;n o los actos posteriores de la an&oacute;nima <b>se entender&aacute; referida tambi&eacute;n al documento privado</b>. Como el aporte es dinerario, no opera la excepci&oacute;n de los bienes cuya transferencia exija escritura. La inscripci&oacute;n registral, en cambio, no es optativa.</span>
       </label>
       <label class="opcion-label">
         <input type="radio" name="q1" value="c" onchange="verificarPreguntas()">
-        <span>c) <b>Escritura p&uacute;blica</b>, porque la Secci&oacute;n Innumerada que rige a la S.A.S. ordena observar <b>las solemnidades exigidas para constituir la compa&ntilde;&iacute;a cuya forma se adopta</b>, y la an&oacute;nima se constituye por escritura p&uacute;blica.</span>
+        <span>c) En <b>documento privado necesariamente</b>: la reforma de 2023 suprimi&oacute; la escritura p&uacute;blica para las sociedades an&oacute;nimas y la sustituy&oacute; por el documento privado inscrito.</span>
       </label>
     </div>
 
@@ -577,7 +577,7 @@ h1,h2,h3,h4{font-family:var(--titulo);font-weight:600;line-height:1.2;margin:0}
         Luego de amplias deliberaciones basadas en el dictamen legal precedente, la Junta General de Accionistas RESUELVE por unanimidad:<br>
         <b>RESOLUCIÓN PRIMERA:</b> Aprobar en su totalidad el informe de calificación de mercantilidad, ratificando la exigibilidad de los intereses moratorios comerciales.<br>
         <b>RESOLUCIÓN SEGUNDA:</b> Disponer el inicio inmediato del Juicio Ejecutivo cambiario contra el deudor principal y el avalista solidario por el importe total.<br>
-        <b>RESOLUCIÓN TERCERA:</b> Aprobar la operación de capitalización y facultar la formalización de la transformación societaria mediante Escritura Pública ante Notario y trámite registral de ley.<br>
+        <b>RESOLUCIÓN TERCERA:</b> Aprobar la operación de capitalización en numerario y facultar la formalización de la transformación societaria observando las solemnidades de constitución de la compañía anónima —escritura pública o documento privado, indistintamente, conforme a la Disposición General Tercera de la Ley de Compañías— y su inscripción en el registro correspondiente.<br>
         <b>RESOLUCIÓN CUARTA:</b> Designar una firma auditora calificada ante la SCVS para el ejercicio económico y ratificar el régimen de responsabilidad limitada de los accionistas.
       </p>
 
@@ -855,7 +855,7 @@ function actualizarVistaPrevia() {
 function verificarPreguntas() {
   // Cinco preguntas, respuesta unica. El acierto exige las cinco: el control
   // no es un promedio, es una comprobacion de que se leyo la norma.
-  var CLAVE = { q1: 'c', q2: 'b', q3: 'c', q4: 'a', q5: 'b' };
+  var CLAVE = { q1: 'b', q2: 'b', q3: 'c', q4: 'a', q5: 'b' };
   var nombres = ['q1', 'q2', 'q3', 'q4', 'q5'];
 
   var respondidas = 0, aciertos = 0, marcadas = [];
@@ -888,7 +888,7 @@ function verificarPreguntas() {
     fb.style.border = '1px solid var(--verde)';
     fb.style.color = '#0e4a25';
     fb.innerHTML = '<b>&#10004; Las cinco correctas.</b><br>' +
-      '<b>1.</b> La escritura p&uacute;blica se exige porque la Secci&oacute;n Innumerada remite a las solemnidades de constituci&oacute;n de la compa&ntilde;&iacute;a que se adopta, no por el r&eacute;gimen general de los Arts. 330 y siguientes.<br>' +
+      '<b>1.</b> No hay una sola solemnidad. La remisi&oacute;n de la Secci&oacute;n Innumerada lleva al Art. 146, pero la <b>Disposici&oacute;n General Tercera</b> puso el documento privado a la par de la escritura p&uacute;blica para la an&oacute;nima. La escritura vuelve a ser forzosa solo si se aportan bienes cuya transferencia la exija: aqu&iacute; el aporte es dinerario.<br>' +
       '<b>2.</b> El umbral es de <b>dos tercios</b> del capital, no unanimidad. Aqu&iacute; se cumple con holgura.<br>' +
       '<b>3.</b> El Art. 238 exige todo el capital <b>y</b> unanimidad sobre la celebraci&oacute;n <b>y</b> el orden del d&iacute;a; su infracci&oacute;n acarrea nulidad.<br>' +
       '<b>4.</b> El Art. 410 es del C&oacute;digo derogado de 1960. Hoy rigen los Arts. 113 a 115.<br>' +
@@ -901,7 +901,8 @@ function verificarPreguntas() {
     fb.style.color = 'var(--contra)';
     fb.innerHTML = '<b>&#9888; Acert&oacute; ' + aciertos + ' de ' + nombres.length + '.</b> ' +
       'No se le indica cu&aacute;les para que vuelva a la norma y no descarte por tanteo. ' +
-      'Rev&iacute;selas en este orden: la Secci&oacute;n Innumerada de la S.A.S. y su proceso de ' +
+      'Rev&iacute;selas en este orden: la Disposici&oacute;n General Tercera de la Ley de '
+      'Compa&ntilde;&iacute;as, la Secci&oacute;n Innumerada de la S.A.S. y su proceso de ' +
       'transformaci&oacute;n, el Art. 238 de la Ley de Compa&ntilde;&iacute;as, y los Arts. 113 a 115 ' +
       'del C&oacute;digo de Comercio de 2019.';
     estado.preguntasCorrectas = false;
