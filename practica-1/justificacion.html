@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hoja de justificación · Práctica 1 · Letra de cambio · UCACUE</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+:root{
+  --papel:#f6f6f4; --papel-alt:#ececea; --blanco:#fff;
+  --tinta:#17181a; --tinta-suave:#33353a; --nota:#474745;
+  --acento:#0a5757; --acento-claro:#14807f; --acento-tenue:#e2eeed;
+  --contra:#8a2b2b; --contra-tenue:#f4e7e7;
+  --ambar:#7a5200; --ambar-tenue:#fdf6e3; --ambar-linea:#e0cd93;
+  --verde:#14603a; --verde-tenue:#e6f0ea; --verde-linea:#8bbfa3;
+  --linea:#d0d0cd;
+  --serif:Charter,"Georgia","Times New Roman",serif;
+  --titulo:"Segoe UI",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--papel);color:var(--tinta);
+  font-family:var(--serif);font-size:16px;line-height:1.62}
+h1,h2,h3,h4{font-family:var(--titulo);font-weight:600;line-height:1.24;margin:0}
+.oculto{display:none !important}
+
+.banda{background:var(--acento);color:#fff;padding:1.1rem 1.2rem}
+.banda .interior{max-width:880px;margin:0 auto;
+  display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap}
+.banda .emisor{font-family:var(--titulo);font-size:.62rem;letter-spacing:.2em;
+  text-transform:uppercase;color:#cfe3e2;margin:0 0 .3rem}
+.banda h1{font-size:1.3rem}
+.banda .marcador{font-family:var(--titulo);font-size:.82rem;color:#cfe3e2;white-space:nowrap}
+
+.hoja{max-width:880px;margin:0 auto;padding:1.4rem 1.2rem 5rem}
+
+.caja{background:var(--blanco);border:1px solid var(--linea);border-radius:3px;
+  padding:1rem 1.15rem;margin-bottom:1rem}
+.caja h2{font-size:1.05rem;color:var(--acento);margin-bottom:.5rem}
+.caja h3{font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--acento);margin-bottom:.6rem}
+
+.aviso{background:var(--ambar-tenue);border:1px solid var(--ambar-linea);
+  border-left:5px solid var(--ambar);border-radius:0 3px 3px 0;
+  padding:.8rem .95rem;margin:1rem 0;font-size:.92rem;color:#4a3a10}
+.alerta{background:var(--contra-tenue);border:1px solid #d9b3b3;
+  border-left:5px solid var(--contra);border-radius:0 3px 3px 0;
+  padding:.8rem .95rem;margin:1rem 0;font-size:.92rem;color:#5d1f1f}
+.bien{background:var(--verde-tenue);border:1px solid var(--verde-linea);
+  border-left:5px solid var(--verde);border-radius:0 3px 3px 0;
+  padding:.8rem .95rem;margin:1rem 0;font-size:.92rem;color:#0e4a25}
+
+.campos{display:flex;gap:.7rem;flex-wrap:wrap}
+.campo{flex:1 1 200px;display:flex;flex-direction:column}
+.campo.ancho{flex:1 1 100%}
+.campo label{font-family:var(--titulo);font-size:.75rem;font-weight:600;
+  color:var(--tinta-suave);margin-bottom:.25rem}
+.campo input,.campo textarea{padding:.55rem .6rem;border:1px solid var(--linea);
+  border-radius:3px;background:var(--blanco);font-family:var(--serif);
+  font-size:1rem;color:var(--tinta)}
+.campo textarea{resize:vertical;min-height:110px;line-height:1.6}
+.campo input:focus,.campo textarea:focus{outline:2px solid var(--acento);outline-offset:1px}
+.pista{font-size:.78rem;color:var(--nota);margin-top:.25rem;min-height:1em}
+.pista.mal{color:var(--contra);font-weight:600}
+.pista.ok{color:var(--verde);font-weight:600}
+
+.literal{border:1px solid var(--linea);border-left:4px solid var(--acento-claro);
+  border-radius:0 3px 3px 0;padding:.75rem .9rem;margin-bottom:.8rem;background:var(--blanco)}
+.literal h4{font-size:.95rem;color:var(--acento);margin-bottom:.15rem}
+.literal .norma{font-size:.8rem;color:var(--nota);margin-bottom:.5rem}
+
+.btn{font-family:var(--titulo);font-size:.95rem;font-weight:600;
+  background:var(--acento);color:#fff;border:1px solid var(--acento);
+  border-radius:3px;padding:.65rem 1.3rem;cursor:pointer;min-height:44px}
+.btn:hover:not(:disabled){background:var(--acento-claro)}
+.btn:disabled{background:var(--papel-alt);color:var(--nota);border-color:var(--linea);cursor:not-allowed}
+.btn.sec{background:transparent;color:var(--acento)}
+.btn.sec:hover:not(:disabled){background:var(--acento-tenue)}
+.acciones{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.9rem}
+
+.hilo{margin:1rem 0}
+.turno{border-radius:4px;padding:.8rem .95rem;margin-bottom:.8rem;font-size:.95rem}
+.turno.yo{background:var(--acento-tenue);border:1px solid var(--acento-claro)}
+.turno.ia{background:var(--papel-alt);border:1px solid var(--linea)}
+.turno .quien{font-family:var(--titulo);font-size:.68rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--nota);margin-bottom:.35rem}
+.turno p{margin:0 0 .6rem}
+.turno p:last-child{margin-bottom:0}
+.turno ol,.turno ul{margin:.3rem 0 .6rem;padding-left:1.3rem}
+
+.acta{background:#fff;padding:2.2rem 2rem;border:1px solid var(--linea);
+  font-family:var(--serif);font-size:12px;line-height:1.55;color:#17181a}
+.acta .cab{text-align:center;border-bottom:2px solid var(--acento);
+  padding-bottom:.6rem;margin-bottom:1rem}
+.acta .cab .em{font-family:var(--titulo);font-size:8px;font-weight:700;
+  letter-spacing:1.6px;color:var(--nota);margin:0 0 .3rem}
+.acta .cab h2{font-family:var(--titulo);font-size:15px;color:var(--acento);margin:0}
+.acta .sec{font-family:var(--titulo);font-size:10px;font-weight:700;color:#fff;
+  background:var(--acento);padding:3px 7px;margin:1rem 0 .55rem}
+.acta .datos{width:100%;border-collapse:collapse;font-size:11px}
+.acta .datos td{border:1px solid var(--linea);padding:3px 6px}
+.acta .datos td:first-child{background:var(--papel-alt);font-weight:700;width:34%}
+.acta .cuerpo{white-space:pre-wrap}
+.acta .codigo{font-family:ui-monospace,Consolas,monospace;font-size:10px;
+  background:var(--papel-alt);border:1px solid var(--linea);padding:6px;
+  word-break:break-all;margin-top:.5rem}
+.acta .pie{border-top:1px solid var(--linea);margin-top:1rem;padding-top:.5rem;
+  font-family:var(--titulo);font-size:8px;color:var(--nota)}
+
+.codigo-caja{font-family:ui-monospace,Consolas,monospace;font-size:.82rem;
+  background:var(--papel-alt);border:1px solid var(--linea);border-radius:3px;
+  padding:.7rem;word-break:break-all;margin-top:.6rem;user-select:all;line-height:1.5}
+</style>
+</head>
+<body>
+
+<div class="banda">
+  <div class="interior">
+    <div>
+      <p class="emisor">Universidad Católica de Cuenca · Derecho Mercantil y Societario · Bloque 1</p>
+      <h1>Práctica 1 · Hoja de justificación de la letra de cambio</h1>
+    </div>
+    <div class="marcador" id="marcador">Paso 1 de 4</div>
+  </div>
+</div>
+
+<div class="hoja">
+
+<!-- ==================== PASO 1 · IDENTIFICACIÓN ==================== -->
+<section id="paso-1">
+  <div class="caja">
+    <h2>Antes de empezar</h2>
+    <p>Esta página es <b>la segunda mitad</b> de la Práctica 1. La primera —llenar la letra
+    a mano y escanearla— la califica el docente. Aquí se trabaja <b>la hoja de
+    justificación</b>: los seis puntos que valen el análisis normativo.</p>
+
+    <div class="aviso">
+      <b>Llene la letra antes de entrar aquí.</b> Va a tener que decir, literal por literal,
+      qué escribió usted en el título. Si todavía no lo ha llenado, cierre esta página y
+      vuelva cuando lo tenga delante.
+    </div>
+
+    <div class="alerta">
+      <b>Se escribe aquí, no se pega.</b> El interrogatorio de la segunda parte se construye
+      sobre lo que usted escriba: un texto traído de otro sitio se delata en la primera
+      repregunta. Tenga abiertos el Código de Comercio y el subpunto 1.5.1 del bloque.
+    </div>
+
+    <div class="campos">
+      <div class="campo">
+        <label for="nom">Apellidos y nombres completos</label>
+        <input type="text" id="nom" maxlength="70" autocomplete="off" placeholder="Primer apellido primero">
+      </div>
+      <div class="campo">
+        <label for="ced">Número de cédula</label>
+        <input type="text" id="ced" inputmode="numeric" maxlength="10" autocomplete="off">
+        <span class="pista" id="pista-ced"></span>
+      </div>
+    </div>
+
+    <div id="ficha-caso" class="oculto"></div>
+
+    <div class="acciones">
+      <button type="button" class="btn" id="b-ir2" disabled>Empezar la justificación &rarr;</button>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== PASO 2 · LOS OCHO LITERALES ==================== -->
+<section id="paso-2" class="oculto">
+  <div class="caja">
+    <h2>Los ocho requisitos del artículo 114</h2>
+    <p>Una entrada por literal. En cada una diga <b>dos cosas</b>: qué escribió usted en la
+    letra, y <b>qué habría ocurrido si lo hubiera omitido</b>, según el artículo 115.</p>
+
+    <div class="aviso">
+      El artículo 115 <b>no trata todas las omisiones igual</b>. Algunas dejan el documento
+      sin valer como letra de cambio; otras se salvan por presunción legal. Distinguirlas es
+      el núcleo de esta práctica, y es lo primero que se le va a preguntar.
+    </div>
+  </div>
+
+  <div id="literales"></div>
+
+  <div class="caja">
+    <h3>La cuestión de los intereses</h3>
+    <p id="pregunta-cierre"></p>
+    <div class="campo ancho">
+      <textarea id="cierre" placeholder="Su respuesta"></textarea>
+      <span class="pista" id="pista-cierre"></span>
+    </div>
+    <div class="acciones">
+      <button type="button" class="btn sec" onclick="irAPaso(1)">&larr; Volver</button>
+      <button type="button" class="btn" id="b-ir3" disabled>Someterse al interrogatorio &rarr;</button>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== PASO 3 · INTERROGATORIO ==================== -->
+<section id="paso-3" class="oculto">
+  <div class="caja">
+    <h2>Interrogatorio técnico</h2>
+    <p>Su hoja ya está escrita. Ahora un examinador va a buscarle las costuras: dos rondas
+    de repreguntas sobre los puntos más débiles de lo que usted redactó. <b>Responda con la
+    norma, no con la intuición.</b> Ceder ante una repregunta bien fundada cuesta; sostener
+    con artículo en mano suma.</p>
+    <div class="aviso">
+      No se le dirá si acierta. Al final del interrogatorio recibirá un dictamen razonado con
+      la calificación sugerida de esta mitad, sobre <b>6 puntos</b>.
+    </div>
+  </div>
+
+  <div class="hilo" id="hilo"></div>
+
+  <div class="caja" id="redaccion">
+    <div class="campo ancho">
+      <label for="respuesta" id="lbl-respuesta">Su respuesta</label>
+      <textarea id="respuesta" placeholder="Responda a las repreguntas, una por una"></textarea>
+      <span class="pista" id="pista-respuesta"></span>
+    </div>
+    <div class="acciones">
+      <button type="button" class="btn" id="b-enviar" disabled>Enviar respuesta</button>
+    </div>
+  </div>
+
+  <div class="caja oculto" id="caja-rescate">
+    <div class="alerta" id="txt-rescate"></div>
+    <div class="acciones">
+      <button type="button" class="btn" id="b-reintentar">Reintentar el envío</button>
+      <button type="button" class="btn sec" id="b-cerrar-sin">Cerrar y descargar el acta sin dictamen</button>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== PASO 4 · ACTA ==================== -->
+<section id="paso-4" class="oculto">
+  <div class="caja">
+    <h2>Su acta</h2>
+    <div id="resumen-nota"></div>
+    <p><b>Entrega:</b> descargue el acta en PDF y súbala a la tarea del aula virtual,
+    <b>junto con el escaneo de la letra llenada a mano</b>, en un solo archivo. Y pegue el
+    código de constancia en el cuadro de comentarios de la tarea.</p>
+    <div class="codigo-caja" id="codigo-vista"></div>
+    <div class="acciones">
+      <button type="button" class="btn" id="b-copiar">Copiar el código</button>
+      <button type="button" class="btn" id="b-pdf">Descargar el acta en PDF</button>
+    </div>
+  </div>
+
+  <div class="caja">
+    <h3>Vista previa · esto es lo que va a descargar</h3>
+    <div class="acta" id="acta"></div>
+  </div>
+</section>
+
+</div>
+
+<script>
+/* =====================================================================
+   PRÁCTICA 1 · HOJA DE JUSTIFICACIÓN · 6 de los 10 puntos
+   Los otros 4 son el llenado a mano de la letra, que califica el docente
+   con su visor. Esta página no los toca.
+
+   Articulado cotejado: Arts. 114, 115, 119 y 120 del Código de Comercio
+   de 2019.
+   ===================================================================== */
+
+var WORKER_URL = 'https://aula-mercantil-ia.carloseduardochica.workers.dev';
+var BLOQUE     = 'AP1';
+var SAL        = 'AP1-constancia-v1';
+var RONDAS     = 2;
+var MIN_LIT    = 180;    // por literal
+var MIN_CIERRE = 350;    // la cuestión de los intereses
+var MIN_RESP   = 300;    // cada respuesta del interrogatorio
+var MAX_RESP   = 2200;
+var SOBRE      = 6;      // puntos que reparte esta mitad
+
+var LITERALES = [
+  ['a', 'La denominación «letra de cambio»',
+   'Inserta en el texto mismo del documento y en el idioma de su redacción.'],
+  ['b', 'La orden incondicional de pagar una cantidad determinada',
+   'Sin condición ni plazo añadidos. Repare en el artículo 120 si el monto en números y en letras no coincide.'],
+  ['c', 'El nombre del girado',
+   'Quien debe pagar. Cuidado con confundirlo con el beneficiario.'],
+  ['d', 'La indicación del vencimiento',
+   'La modalidad asignada a su caso. De ella depende la validez de la cláusula de intereses.'],
+  ['e', 'El lugar del pago',
+   'Dónde se hará efectiva la letra.'],
+  ['f', 'El nombre de la persona a quien debe hacerse el pago',
+   'El beneficiario, que en su caso es el propio girador.'],
+  ['g', 'La fecha y el lugar de giro',
+   'Cuándo y dónde se emite el título.'],
+  ['h', 'La firma del girador',
+   'Quien emite la orden de pago.']
+];
+
+var CASOS = {
+  A: {
+    rotulo: 'Caso A · primer apellido de la A a la L',
+    girador: 'Austro-Import S.A., domiciliada en Cuenca',
+    girado: 'señor Manuel Pauta, Av. Solano 3-45, Cuenca',
+    obligacion: 'mutuo mercantil por USD 15.000,00',
+    titulo: 'vencimiento a sesenta días de vista, con interés pactado del 8 % anual indicado en la letra',
+    pregunta: '¿Por qué es <b>válida</b> en su letra la estipulación del 8 % de interés, y qué habría ocurrido con esa misma cláusula en el Caso B?'
+  },
+  B: {
+    rotulo: 'Caso B · primer apellido de la M en adelante',
+    girador: 'Tecno-Soluciones Loja S.A., domiciliada en Loja',
+    girado: 'señora Lorena Ortega, Av. Universitaria 14-22, Loja',
+    obligacion: 'venta e instalación de servidores industriales por USD 15.000,00',
+    titulo: 'vencimiento a día fijo, el 15 de diciembre de 2026, sin estipulación de intereses',
+    pregunta: '¿Por qué en su letra una estipulación de intereses <b>se tendría por no escrita</b>, y qué modalidad de vencimiento habría hecho falta para que fuera válida?'
+  }
+};
+
+/* El examinador. Se le dan los hechos del caso para que no invente, y se le
+   prohíbe expresamente adelantar la respuesta correcta. */
+function mandato(caso, alumno) {
+  var c = CASOS[caso];
+  return [
+    'Eres examinador de Derecho Mercantil y Societario de la Universidad Católica de Cuenca.',
+    'Interrogas a un estudiante de tercer ciclo sobre la hoja de justificación de una letra',
+    'de cambio que él mismo llenó a mano. No eres un tutor: eres quien busca las costuras.',
+    '',
+    'EL CASO DEL ESTUDIANTE (' + c.rotulo + ')',
+    '- Girador y beneficiario: ' + c.girador + '.',
+    '- Girado: ' + c.girado + '.',
+    '- Obligación: ' + c.obligacion + '.',
+    '- Título: ' + c.titulo + '.',
+    '',
+    'NORMA APLICABLE, QUE DEBES MANEJAR CON EXACTITUD',
+    '- Art. 114 del Código de Comercio de 2019: los ocho requisitos, literales a) a h).',
+    '- Art. 115: las consecuencias de la omisión. NO todas son iguales. Algunas privan al',
+    '  documento de valor como letra de cambio; otras se salvan por presunción legal.',
+    '- Art. 119: la estipulación de intereses SOLO cabe en la letra pagadera a la vista o a',
+    '  cierto plazo de vista. En cualquier otra modalidad se tiene por no escrita.',
+    '- Art. 120: si el monto en números y en letras discrepa, vale el escrito en letras.',
+    '',
+    'CÓMO INTERROGAS',
+    '1. En cada ronda formulas EXACTAMENTE TRES repreguntas, numeradas, cortas y concretas.',
+    '2. Atacas los puntos DÉBILES de lo que el estudiante escribió: una consecuencia del',
+    '   art. 115 mal atribuida, una confusión entre girado y beneficiario, un literal',
+    '   despachado sin análisis, una afirmación sobre intereses sin anclaje en el art. 119.',
+    '3. Si el estudiante acierta en todo, no lo felicitas: subes el nivel y le pides el',
+    '   supuesto límite o el contraste con el otro caso.',
+    '4. NUNCA das la respuesta correcta antes del dictamen final. Nunca dices si acertó.',
+    '5. No inventas artículos ni les atribuyes contenido que no tienen.',
+    '6. Te diriges al estudiante de usted, en español de Ecuador, sin fórmulas de cortesía',
+    '   ni lenguaje motivacional. Cada repregunta en una línea.',
+    '',
+    'EL ESTUDIANTE: ' + alumno + '.'
+  ].join('\n');
+}
+
+var INSTRUCCION_FINAL = [
+  '',
+  '--- FIN DEL INTERROGATORIO ---',
+  'Esta era la última ronda. No formules más repreguntas. Emite ahora el dictamen con',
+  'esta estructura exacta, en Markdown:',
+  '',
+  '### DICTAMEN',
+  '',
+  '**Recorrido de los ocho literales.** Qué hizo bien y qué falló, literal por literal,',
+  'solo donde haya algo que decir. Cita el artículo.',
+  '',
+  '**La distinción del artículo 115.** Si separó con precisión las omisiones que invalidan',
+  'de las que se salvan por presunción, o si las confundió y dónde.',
+  '',
+  '**La cuestión de los intereses.** Si aplicó bien el artículo 119 a su caso y al contrario.',
+  '',
+  '**Lo que debe corregir.** Dos o tres indicaciones concretas.',
+  '',
+  'Y cierra con una línea exactamente con este formato, sin nada después:',
+  'TOTAL SUGERIDO: X,X/6',
+  '',
+  'Reparte así los 6 puntos: 4,0 por la justificación de los ocho literales y la',
+  'distinción del art. 115; 2,0 por la cuestión de los intereses del art. 119.'
+].join('\n');
+
+/* ------------------------------------------------------------- estado */
+var alumno = { nom: '', ced: '', caso: null };
+var historia = [];
+var registro = [];
+var ronda = 0;
+var notaFinal = null;
+var inicio = null;
+var ultimoTexto = null;
+
+/* --------------------------------------------------------- utilidades */
+function $(id) { return document.getElementById(id); }
+
+function irAPaso(n) {
+  [1, 2, 3, 4].forEach(function (i) {
+    $('paso-' + i).classList.toggle('oculto', i !== n);
+  });
+  $('marcador').textContent = 'Paso ' + n + ' de 4';
+  window.scrollTo(0, 0);
+}
+
+function cedulaValida(c) {
+  if (!/^\d{10}$/.test(c)) return false;
+  var prov = parseInt(c.slice(0, 2), 10);
+  if (!((prov >= 1 && prov <= 24) || prov === 30)) return false;
+  if (parseInt(c[2], 10) > 5) return false;
+  var suma = 0;
+  for (var i = 0; i < 9; i++) {
+    var d = parseInt(c[i], 10) * (i % 2 === 0 ? 2 : 1);
+    if (d > 9) d -= 9;
+    suma += d;
+  }
+  return ((10 - (suma % 10)) % 10) === parseInt(c[9], 10);
+}
+
+function djb2(s) {
+  var h = 5381;
+  for (var i = 0; i < s.length; i++) h = ((h * 33) + s.charCodeAt(i)) >>> 0;
+  return h;
+}
+function base36(n) {
+  if (n === 0) return '0';
+  var d = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', s = '';
+  while (n > 0) { s = d[n % 36] + s; n = Math.floor(n / 36); }
+  return s;
+}
+function sinTildes(s) {
+  return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+                  .replace(/\s+/g, ' ').trim().toUpperCase();
+}
+function dd(n) { return String(n).padStart(2, '0'); }
+function fechaLocal(d) {
+  return d.getFullYear() + '-' + dd(d.getMonth() + 1) + '-' + dd(d.getDate()) +
+         ' ' + dd(d.getHours()) + ':' + dd(d.getMinutes());
+}
+function escapa(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/* ------------------------------------------------- paso 1 · el caso */
+function derivaCaso() {
+  var n = sinTildes($('nom').value);
+  if (!n || !/[A-Z]/.test(n[0])) return null;
+  return n[0] <= 'L' ? 'A' : 'B';
+}
+
+function revisaPaso1() {
+  var c = $('ced').value, p = $('pista-ced');
+  if (!c) { p.textContent = ''; p.className = 'pista'; }
+  else if (c.length < 10) { p.textContent = 'Faltan ' + (10 - c.length) + ' dígitos.'; p.className = 'pista'; }
+  else if (!cedulaValida(c)) { p.textContent = 'Esa cédula no es válida. Revísela.'; p.className = 'pista mal'; }
+  else { p.textContent = 'Correcta.'; p.className = 'pista ok'; }
+
+  var caso = derivaCaso();
+  var ficha = $('ficha-caso');
+  if (caso) {
+    var d = CASOS[caso];
+    ficha.classList.remove('oculto');
+    ficha.className = 'bien';
+    ficha.innerHTML = '<b>' + d.rotulo + '</b><br>' +
+      'Girador y beneficiario: ' + d.girador + '.<br>' +
+      'Girado: ' + d.girado + '.<br>' +
+      'Obligación: ' + d.obligacion + '.<br>' +
+      'Título: ' + d.titulo + '.';
+  } else {
+    ficha.classList.add('oculto');
+  }
+
+  $('b-ir2').disabled = !(caso && cedulaValida(c) && $('nom').value.trim().length > 5);
+}
+
+$('nom').addEventListener('input', revisaPaso1);
+$('ced').addEventListener('input', function () {
+  $('ced').value = $('ced').value.replace(/\D/g, '').slice(0, 10);
+  revisaPaso1();
+});
+
+$('b-ir2').addEventListener('click', function () {
+  alumno.nom = $('nom').value.trim().replace(/\s+/g, ' ');
+  alumno.ced = $('ced').value.trim();
+  alumno.caso = derivaCaso();
+  $('pregunta-cierre').innerHTML = CASOS[alumno.caso].pregunta;
+  irAPaso(2);
+});
+
+/* ------------------------------------------- paso 2 · los literales */
+$('literales').innerHTML = LITERALES.map(function (l) {
+  return '<div class="literal">' +
+    '<h4>' + l[0] + ') ' + l[1] + '</h4>' +
+    '<p class="norma">' + l[2] + '</p>' +
+    '<div class="campo ancho">' +
+      '<textarea id="lit-' + l[0] + '" data-lit="1" ' +
+      'placeholder="Qué escribió usted, y qué habría pasado si lo omitía"></textarea>' +
+      '<span class="pista" id="p-lit-' + l[0] + '"></span>' +
+    '</div></div>';
+}).join('');
+
+function cuenta(id, minimo, pistaId) {
+  var n = $(id).value.trim().length, p = $(pistaId);
+  if (n === 0) { p.textContent = 'Mínimo ' + minimo + ' caracteres.'; p.className = 'pista'; }
+  else if (n < minimo) { p.textContent = n + ' caracteres · faltan ' + (minimo - n); p.className = 'pista mal'; }
+  else { p.textContent = n + ' caracteres'; p.className = 'pista ok'; }
+  return n >= minimo;
+}
+
+function revisaPaso2() {
+  var todos = true;
+  LITERALES.forEach(function (l) {
+    if (!cuenta('lit-' + l[0], MIN_LIT, 'p-lit-' + l[0])) todos = false;
+  });
+  if (!cuenta('cierre', MIN_CIERRE, 'pista-cierre')) todos = false;
+  $('b-ir3').disabled = !todos;
+}
+
+document.querySelectorAll('[data-lit]').forEach(function (t) {
+  t.addEventListener('input', revisaPaso2);
+});
+$('cierre').addEventListener('input', revisaPaso2);
+
+$('b-ir3').addEventListener('click', function () {
+  if (!confirm('Al pasar al interrogatorio su hoja queda cerrada y no podrá reescribirla. ¿Continúa?')) return;
+  irAPaso(3);
+  arranca();
+});
+
+/* --------------------------------------- paso 3 · el interrogatorio */
+function hojaDelEstudiante() {
+  var t = ['HOJA DE JUSTIFICACIÓN PRESENTADA', ''];
+  LITERALES.forEach(function (l) {
+    t.push('LITERAL ' + l[0] + ') ' + l[1]);
+    t.push($('lit-' + l[0]).value.trim());
+    t.push('');
+  });
+  t.push('LA CUESTIÓN DE LOS INTERESES');
+  t.push($('cierre').value.trim());
+  return t.join('\n');
+}
+
+function pinta(quien, texto) {
+  var d = document.createElement('div');
+  d.className = 'turno ' + quien;
+  var rot = quien === 'yo' ? 'Usted' : 'Examinador';
+  d.innerHTML = '<div class="quien">' + rot + '</div>' +
+    (quien === 'ia' ? marked.parse(texto) : '<p>' + escapa(texto).replace(/\n/g, '<br>') + '</p>');
+  $('hilo').appendChild(d);
+  registro.push({ quien: rot, texto: texto });
+  d.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+
+function arranca() {
+  inicio = new Date();
+  var hoja = hojaDelEstudiante();
+  registro.push({ quien: 'Usted', texto: hoja });
+  historia.push({ role: 'user', parts: [{ text: hoja }] });
+  $('redaccion').classList.add('oculto');
+  pide();
+}
+
+function bloqueaEnvio(b, txt) {
+  $('respuesta').disabled = b;
+  $('b-enviar').disabled = b;
+  if (txt) $('b-enviar').textContent = txt;
+}
+
+async function pide() {
+  $('caja-rescate').classList.add('oculto');
+  bloqueaEnvio(true, 'Esperando al examinador…');
+  $('redaccion').classList.remove('oculto');
+
+  try {
+    var r = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: mandato(alumno.caso, alumno.nom) }] },
+        contents: historia,
+        generationConfig: { temperature: 0.35 }
+      })
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+
+    var datos = await r.json();
+    var cand = datos && datos.candidates && datos.candidates[0];
+    // Se juntan todas las partes: un modelo que razona puede separar el
+    // razonamiento del texto, y quedarse con parts[0] devuelve vacío.
+    var partes = (cand && cand.content && cand.content.parts) || [];
+    var texto = partes.map(function (p) {
+      return (p && typeof p.text === 'string') ? p.text : '';
+    }).join('').trim();
+    var cortada = cand && cand.finishReason === 'MAX_TOKENS';
+
+    if (!texto) throw new Error('respuesta vacía');
+
+    historia.push({ role: 'model', parts: [{ text: texto }] });
+    pinta('ia', texto);
+
+    if (ronda >= RONDAS) {
+      cierra(texto, cortada);
+    } else {
+      bloqueaEnvio(false, 'Enviar respuesta');
+      $('respuesta').value = '';
+      $('lbl-respuesta').textContent = 'Su respuesta a la ronda ' + (ronda + 1) + ' de ' + RONDAS;
+      cuenta('respuesta', MIN_RESP, 'pista-respuesta');
+      $('marcador').textContent = 'Interrogatorio · ronda ' + (ronda + 1) + ' de ' + RONDAS;
+      $('respuesta').focus();
+    }
+  } catch (err) {
+    // Se retira de la historia lo que no llegó a contestarse, para que
+    // reintentar no duplique el texto del estudiante.
+    if (historia.length && historia[historia.length - 1].role === 'user' && ultimoTexto !== null) {
+      historia.pop();
+      registro.pop();
+    }
+    $('redaccion').classList.add('oculto');
+    $('caja-rescate').classList.remove('oculto');
+    $('txt-rescate').innerHTML = '<b>El examinador no respondió.</b> ' +
+      escapa(err.message) + '. Reintente en unos segundos. Si vuelve a fallar, ' +
+      '<b>cierre y descargue el acta</b>: todo lo que usted escribió consta íntegro y el ' +
+      'docente lo califica leyéndolo. Un fallo del servicio no puede costarle el trabajo.';
+  }
+}
+
+$('respuesta').addEventListener('input', function () {
+  var n = $('respuesta').value.trim().length;
+  var p = $('pista-respuesta');
+  if (n > MAX_RESP) {
+    p.textContent = n + ' caracteres · sobran ' + (n - MAX_RESP);
+    p.className = 'pista mal';
+    $('b-enviar').disabled = true;
+    return;
+  }
+  var ok = cuenta('respuesta', MIN_RESP, 'pista-respuesta');
+  $('b-enviar').disabled = !ok;
+});
+
+$('b-enviar').addEventListener('click', function () {
+  var t = $('respuesta').value.trim();
+  if (t.length < MIN_RESP || t.length > MAX_RESP) return;
+  ronda++;
+  ultimoTexto = t;
+  pinta('yo', t);
+  var paraElModelo = t;
+  if (ronda >= RONDAS) paraElModelo += '\n' + INSTRUCCION_FINAL;
+  historia.push({ role: 'user', parts: [{ text: paraElModelo }] });
+  pide();
+});
+
+$('b-reintentar').addEventListener('click', function () {
+  if (ultimoTexto !== null) {
+    var paraElModelo = ultimoTexto;
+    if (ronda >= RONDAS) paraElModelo += '\n' + INSTRUCCION_FINAL;
+    historia.push({ role: 'user', parts: [{ text: paraElModelo }] });
+    registro.push({ quien: 'Usted', texto: ultimoTexto });
+  }
+  pide();
+});
+
+$('b-cerrar-sin').addEventListener('click', function () {
+  cierra('_SIN_DICTAMEN_', false);
+});
+
+/* ------------------------------------------------ paso 4 · el acta */
+function extraeTotal(texto) {
+  var m = texto.match(/TOTAL\s+SUGERIDO[:\s*]*([0-9])[.,]?([0-9]?)\s*\/?\s*6/i);
+  if (!m) return null;
+  var n = parseFloat(m[1] + '.' + (m[2] || '0'));
+  return (isFinite(n) && n >= 0 && n <= SOBRE) ? n : null;
+}
+
+function cierra(replica, cortada) {
+  $('redaccion').classList.add('oculto');
+  $('caja-rescate').classList.add('oculto');
+
+  var fin = new Date();
+  var minutos = Math.max(1, Math.round((fin - inicio) / 60000));
+  var sinDictamen = (replica === '_SIN_DICTAMEN_');
+  notaFinal = sinDictamen ? null : extraeTotal(replica);
+
+  var dictamen;
+  if (sinDictamen) {
+    dictamen = '### DICTAMEN NO EMITIDO\n\nEl interrogatorio se cerró sin dictamen ' +
+      'automático porque el servicio no respondió. La hoja de justificación y las ' +
+      'respuestas constan íntegras en esta acta. La calificación la determina el docente.';
+  } else {
+    var i = replica.indexOf('### DICTAMEN');
+    dictamen = i !== -1 ? replica.slice(i) : replica;
+    if (cortada && notaFinal === null) {
+      dictamen += '\n\n**Aviso:** el dictamen quedó cortado por el servicio y no llegó a ' +
+        'consignar la calificación. Lo escrito consta íntegro: el docente califica leyéndolo.';
+    }
+  }
+
+  var cuerpo = BLOQUE + '|' + alumno.ced + '|' + sinTildes(alumno.nom) + '|' +
+    alumno.caso + 'C|' + ronda + '/' + RONDAS + 'R|' +
+    (notaFinal === null ? '0.00' : notaFinal.toFixed(2)) + 'N|' +
+    minutos + 'M|' + fechaLocal(fin);
+  var codigo = cuerpo + '|' + base36(djb2(SAL + cuerpo));
+
+  $('codigo-vista').textContent = codigo;
+
+  $('resumen-nota').innerHTML = (notaFinal === null)
+    ? '<div class="alerta"><b>Sin calificación automática.</b> Su trabajo consta íntegro en ' +
+      'el acta y lo califica el docente.</div>'
+    : '<div class="bien"><b>Calificación sugerida de esta mitad: ' +
+      notaFinal.toFixed(1).replace('.', ',') + ' / 6.</b> Es una sugerencia razonada, no una ' +
+      'nota en firme: el docente la revisa junto con los 4 puntos del llenado de la letra.</div>';
+
+  var filas = registro.map(function (r, n) {
+    return '<p><b>' + escapa(r.quien) + (n === 0 ? '' : ' · intervención ' + n) + '</b></p>' +
+           '<div class="cuerpo">' + escapa(r.texto) + '</div>';
+  }).join('<hr style="border:0;border-top:1px solid #d0d0cd;margin:.6rem 0">');
+
+  $('acta').innerHTML =
+    '<div class="cab"><p class="em">UNIVERSIDAD CATÓLICA DE CUENCA · CARRERA DE DERECHO · TERCER CICLO</p>' +
+    '<h2>Acta de la hoja de justificación · Práctica 1</h2></div>' +
+    '<table class="datos"><tr><td>Estudiante</td><td>' + escapa(alumno.nom) + '</td></tr>' +
+    '<tr><td>Cédula</td><td>' + escapa(alumno.ced) + '</td></tr>' +
+    '<tr><td>Caso asignado</td><td>' + CASOS[alumno.caso].rotulo + '</td></tr>' +
+    '<tr><td>Título de la práctica</td><td>' + CASOS[alumno.caso].titulo + '</td></tr>' +
+    '<tr><td>Rondas de interrogatorio</td><td>' + ronda + ' de ' + RONDAS + '</td></tr>' +
+    '<tr><td>Duración</td><td>' + minutos + ' minutos</td></tr>' +
+    '<tr><td>Emitida</td><td>' + fechaLocal(fin) + '</td></tr>' +
+    '<tr><td>Calificación sugerida</td><td>' +
+      (notaFinal === null ? 'sin dictamen automático' : notaFinal.toFixed(1).replace('.', ',') + ' / 6') +
+    '</td></tr></table>' +
+    '<div class="sec">I · HOJA DE JUSTIFICACIÓN E INTERROGATORIO</div>' + filas +
+    '<div class="sec">II · DICTAMEN</div>' + marked.parse(dictamen) +
+    '<div class="sec">III · CÓDIGO DE CONSTANCIA</div>' +
+    '<div class="codigo">' + escapa(codigo) + '</div>' +
+    '<div class="pie">Esta acta recoge lo que el estudiante escribió, sin corregirlo ni ' +
+    'completarlo. Cubre 6 de los 10 puntos de la Práctica 1; los otros 4 corresponden al ' +
+    'llenado manual de la letra de cambio, que califica el docente.</div>';
+
+  irAPaso(4);
+  $('marcador').textContent = 'Acta emitida';
+}
+
+$('b-copiar').addEventListener('click', function () {
+  var b = this;
+  navigator.clipboard.writeText($('codigo-vista').textContent).then(
+    function () { b.textContent = 'Copiado'; setTimeout(function () { b.textContent = 'Copiar el código'; }, 1800); },
+    function () { b.textContent = 'Selecciónelo y cópielo a mano'; }
+  );
+});
+
+$('b-pdf').addEventListener('click', function () {
+  var b = this;
+  b.disabled = true;
+  b.textContent = 'Generando…';
+
+  // html2canvas captura en coordenadas del documento: si el acta está lejos
+  // del borde superior, el PDF sale en blanco. Por eso se sube la página
+  // antes de capturar y se espera a que el navegador repinte.
+  var previo = window.scrollY;
+  window.scrollTo(0, 0);
+
+  setTimeout(function () {
+    html2pdf().set({
+      margin: 10,
+      filename: 'Justificacion_Letra_' + alumno.ced + '.pdf',
+      image: { type: 'jpeg', quality: 0.96 },
+      html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['css', 'legacy'] }
+    }).from($('acta')).save().then(function () {
+      b.disabled = false; b.textContent = 'Descargar el acta en PDF';
+      window.scrollTo(0, previo);
+    }).catch(function (e) {
+      b.disabled = false; b.textContent = 'Reintentar la descarga';
+      alert('No se pudo generar el PDF: ' + e.message +
+            '\n\nCopie el código de constancia y avise al docente.');
+      window.scrollTo(0, previo);
+    });
+  }, 350);
+});
+
+revisaPaso1();
+</script>
+</body>
+</html>
