@@ -401,57 +401,88 @@ h1,h2,h3,h4{font-family:var(--titulo);font-weight:600;line-height:1.2;margin:0}
     </div>
 
     <p style="font-size:.92rem;color:var(--tinta-suave);margin-bottom:1.5rem;">
-      Para certificar la idoneidad registral del Acta antes de su protocolización y firma final, conteste las siguientes preguntas de control societario ecuatoriano:
+      Cinco preguntas de control. <b>Ninguna se contesta por intuici&oacute;n:</b> las tres
+      opciones de cada una son defendibles a primera vista, y solo una resiste el texto de
+      la norma. Tenga la Ley de Compa&ntilde;&iacute;as y el C&oacute;digo de Comercio a mano.
     </p>
 
-    <!-- Pregunta 1 -->
     <div class="pregunta-card">
-      <h4>1. ¿Qué instrumento público formal se requiere para formalizar la Transformación de una S.A.S. a Sociedad Anónima (S.A.) tras la aprobación del Acta?</h4>
+      <h4>1. Andes Logistics es una S.A.S. que resuelve transformarse en Compa&ntilde;&iacute;a An&oacute;nima. &iquest;Qu&eacute; solemnidad exige la ley <b>y con qu&eacute; fundamento</b>?</h4>
       <label class="opcion-label">
         <input type="radio" name="q1" value="a" onchange="verificarPreguntas()">
-        <span>a) Basta un documento privado firmado electrónicamente e ingresado al portal web de la Superintendencia.</span>
+        <span>a) Documento privado inscrito en el Registro de Sociedades, porque toda actuaci&oacute;n de una S.A.S. se instrumenta de ese modo, tal como su constituci&oacute;n.</span>
       </label>
       <label class="opcion-label">
         <input type="radio" name="q1" value="b" onchange="verificarPreguntas()">
-        <span>b) <b>Escritura Pública otorgada ante Notario Público</b>, incorporando el Acta de Junta Universal y el balance especial de transformación, sujeta a posterior aprobación e inscripción registral.</span>
+        <span>b) Escritura p&uacute;blica, porque los art&iacute;culos 330 y siguientes de la Ley de Compa&ntilde;&iacute;as la exigen para toda transformaci&oacute;n societaria.</span>
       </label>
       <label class="opcion-label">
         <input type="radio" name="q1" value="c" onchange="verificarPreguntas()">
-        <span>c) Un acta simple de directorio protocolizada en la Cámara de Comercio.</span>
+        <span>c) <b>Escritura p&uacute;blica</b>, porque la Secci&oacute;n Innumerada que rige a la S.A.S. ordena observar <b>las solemnidades exigidas para constituir la compa&ntilde;&iacute;a cuya forma se adopta</b>, y la an&oacute;nima se constituye por escritura p&uacute;blica.</span>
       </label>
     </div>
 
-    <!-- Pregunta 2 -->
     <div class="pregunta-card">
-      <h4>2. ¿Cuál es el orden de entidades competentes para la aprobación e inscripción del acto societario de transformación a S.A.?</h4>
+      <h4>2. &iquest;Qu&eacute; umbral de votaci&oacute;n exige la ley para que la S.A.S. acuerde transformarse?</h4>
       <label class="opcion-label">
         <input type="radio" name="q2" value="a" onchange="verificarPreguntas()">
-        <span>a) Notaría Pública &rarr; Superintendencia de Compañías, Valores y Seguros (Resolución Aprobatoria) &rarr; Registro de Sociedades / Registro Mercantil.</span>
+        <span>a) Unanimidad del capital social, por tratarse de una modificaci&oacute;n estructural que afecta al r&eacute;gimen de responsabilidad.</span>
       </label>
       <label class="opcion-label">
         <input type="radio" name="q2" value="b" onchange="verificarPreguntas()">
-        <span>b) Servicio de Rentas Internas (SRI) &rarr; Ministerio de Trabajo &rarr; Municipio de Cuenca.</span>
+        <span>b) <b>Cuando menos las dos terceras partes del capital social</b>, conforme al proceso de transformaci&oacute;n de la Secci&oacute;n Innumerada. En esta junta el umbral se supera, al estar presente el 100%.</span>
       </label>
       <label class="opcion-label">
         <input type="radio" name="q2" value="c" onchange="verificarPreguntas()">
-        <span>c) Registro Mercantil directamente sin pasar por Notaría ni Superintendencia.</span>
+        <span>c) Mayor&iacute;a simple del capital presente, porque al constituirse en junta universal quedan salvados todos los qu&oacute;rums especiales.</span>
       </label>
     </div>
 
-    <!-- Pregunta 3 -->
     <div class="pregunta-card">
-      <h4>3. ¿Por qué es plenamente válida la renuncia a la convocatoria previa por prensa en esta sesión?</h4>
+      <h4>3. Sobre la junta universal del art&iacute;culo 238: &iquest;qu&eacute; se exige exactamente, y qu&eacute; ocurre si falta?</h4>
       <label class="opcion-label">
         <input type="radio" name="q3" value="a" onchange="verificarPreguntas()">
-        <span>a) Porque el Gerente General tiene la facultad unilateral de prescindir de la ley si hay urgencia económica.</span>
+        <span>a) Que est&eacute; presente todo el capital social. Reunido &eacute;ste, quien preside queda facultado para fijar el orden del d&iacute;a.</span>
       </label>
       <label class="opcion-label">
         <input type="radio" name="q3" value="b" onchange="verificarPreguntas()">
-        <span>b) Porque de conformidad con el <b>Art. 238 de la Ley de Compañías</b>, al estar presente el 100% del capital social y acordar unánimemente el orden del día, la junta se constituye legalmente en Universal.</span>
+        <span>b) Que est&eacute; presente todo el capital y que el orden del d&iacute;a se apruebe por mayor&iacute;a de dos tercios de los asistentes.</span>
       </label>
       <label class="opcion-label">
         <input type="radio" name="q3" value="c" onchange="verificarPreguntas()">
-        <span>c) Porque las compañías S.A.S. nunca requieren convocatoria bajo ningún concepto.</span>
+        <span>c) Que est&eacute; presente <b>todo el capital social</b> y que los asistentes acepten <b>por unanimidad</b> tanto la celebraci&oacute;n de la junta universal como el orden del d&iacute;a. La infracci&oacute;n de ese inciso <b>acarrea la nulidad</b> de lo resuelto.</span>
+      </label>
+    </div>
+
+    <div class="pregunta-card">
+      <h4>4. El deudor moroso opone excepci&oacute;n invocando el <b>art&iacute;culo 410 del C&oacute;digo de Comercio</b>. &iquest;C&oacute;mo debe responder el asesor?</h4>
+      <label class="opcion-label">
+        <input type="radio" name="q4" value="a" onchange="verificarPreguntas()">
+        <span>a) Ese art&iacute;culo pertenece al <b>C&oacute;digo de Comercio de 1960, derogado</b> por el vigente desde mayo de 2019. La letra de cambio se rige hoy por los <b>art&iacute;culos 113 a 115</b>.</span>
+      </label>
+      <label class="opcion-label">
+        <input type="radio" name="q4" value="b" onchange="verificarPreguntas()">
+        <span>b) El art&iacute;culo 410 sigue vigente, pero regula el protesto por falta de aceptaci&oacute;n y no la prescripci&oacute;n, de modo que la excepci&oacute;n es improcedente por error de materia.</span>
+      </label>
+      <label class="opcion-label">
+        <input type="radio" name="q4" value="c" onchange="verificarPreguntas()">
+        <span>c) El art&iacute;culo 410 corresponde al C&oacute;digo Org&aacute;nico Monetario y Financiero y solo alcanza al cheque, no a la letra de cambio.</span>
+      </label>
+    </div>
+
+    <div class="pregunta-card">
+      <h4>5. Al redactar el dictamen hay que citar la norma de la S.A.S. &iquest;C&oacute;mo se cita correctamente?</h4>
+      <label class="opcion-label">
+        <input type="radio" name="q5" value="a" onchange="verificarPreguntas()">
+        <span>a) Como &laquo;art&iacute;culo innumerado primero, segundo, tercero&raquo;, seg&uacute;n el orden en que aparecen dentro de la secci&oacute;n.</span>
+      </label>
+      <label class="opcion-label">
+        <input type="radio" name="q5" value="b" onchange="verificarPreguntas()">
+        <span>b) <b>Sus art&iacute;culos no llevan n&uacute;mero.</b> La ley incorpor&oacute; la figura como <b>Secci&oacute;n Innumerada</b>, de modo que se citan <b>por el t&iacute;tulo del art&iacute;culo</b>.</span>
+      </label>
+      <label class="opcion-label">
+        <input type="radio" name="q5" value="c" onchange="verificarPreguntas()">
+        <span>c) Con el n&uacute;mero del art&iacute;culo de la Ley de Compa&ntilde;&iacute;as que los precede, a&ntilde;adiendo una letra correlativa.</span>
       </label>
     </div>
 
@@ -811,32 +842,50 @@ function actualizarVistaPrevia() {
 }
 
 function verificarPreguntas() {
-  var q1 = document.querySelector('input[name="q1"]:checked');
-  var q2 = document.querySelector('input[name="q2"]:checked');
-  var q3 = document.querySelector('input[name="q3"]:checked');
+  // Cinco preguntas, respuesta unica. El acierto exige las cinco: el control
+  // no es un promedio, es una comprobacion de que se leyo la norma.
+  var CLAVE = { q1: 'c', q2: 'b', q3: 'c', q4: 'a', q5: 'b' };
+  var nombres = ['q1', 'q2', 'q3', 'q4', 'q5'];
+
+  var respondidas = 0, aciertos = 0;
+  nombres.forEach(function (n) {
+    var sel = document.querySelector('input[name="' + n + '"]:checked');
+    if (sel) {
+      respondidas++;
+      if (sel.value === CLAVE[n]) aciertos++;
+    }
+  });
 
   var fb = document.getElementById('feedback-preguntas');
+  if (respondidas < nombres.length) {
+    fb.style.display = 'none';
+    estado.preguntasCorrectas = false;
+    return;
+  }
 
-  if (q1 && q2 && q3) {
-    if (q1.value === 'b' && q2.value === 'a' && q3.value === 'b') {
-      fb.style.display = 'block';
-      fb.style.background = 'var(--verde-tenue)';
-      fb.style.border = '1px solid var(--verde)';
-      fb.style.color = '#0e4a25';
-      fb.innerHTML = '<b>✔ ¡Excelente! Todas las respuestas de control registral son correctas:</b><br>' +
-        '1. La transformación a S.A. requiere solemnidad de <b>Escritura Pública Notarial</b>.<br>' +
-        '2. El trámite formal fluye ante Notaría &rarr; Resolución Supercías &rarr; Registro Mercantil/Sociedades.<br>' +
-        '3. La renuncia expresa a la convocatoria previa es 100% legal por tratarse de <b>Junta Universal (Art. 238 Ley de Compañías)</b>.<br>' +
-        'Ya puede avanzar a la emisión del PDF final.';
-      estado.preguntasCorrectas = true;
-    } else {
-      fb.style.display = 'block';
-      fb.style.background = 'var(--contra-tenue)';
-      fb.style.border = '1px solid var(--contra)';
-      fb.style.color = 'var(--contra)';
-      fb.innerHTML = '<b>⚠ Atención:</b> Alguna de las respuestas seleccionadas no corresponde a la normativa societaria y registral ecuatoriana. Revise los conceptos de Escritura Pública, trámite en Superintendencia y Junta Universal (Art. 238).';
-      estado.preguntasCorrectas = false;
-    }
+  fb.style.display = 'block';
+  if (aciertos === nombres.length) {
+    fb.style.background = 'var(--verde-tenue)';
+    fb.style.border = '1px solid var(--verde)';
+    fb.style.color = '#0e4a25';
+    fb.innerHTML = '<b>&#10004; Las cinco correctas.</b><br>' +
+      '<b>1.</b> La escritura p&uacute;blica se exige porque la Secci&oacute;n Innumerada remite a las solemnidades de constituci&oacute;n de la compa&ntilde;&iacute;a que se adopta, no por el r&eacute;gimen general de los Arts. 330 y siguientes.<br>' +
+      '<b>2.</b> El umbral es de <b>dos tercios</b> del capital, no unanimidad. Aqu&iacute; se cumple con holgura.<br>' +
+      '<b>3.</b> El Art. 238 exige todo el capital <b>y</b> unanimidad sobre la celebraci&oacute;n <b>y</b> el orden del d&iacute;a; su infracci&oacute;n acarrea nulidad.<br>' +
+      '<b>4.</b> El Art. 410 es del C&oacute;digo derogado de 1960. Hoy rigen los Arts. 113 a 115.<br>' +
+      '<b>5.</b> Los art&iacute;culos de la S.A.S. <b>no tienen n&uacute;mero</b>: se citan por su t&iacute;tulo.<br>' +
+      'Ya puede emitir el Acta Oficial.';
+    estado.preguntasCorrectas = true;
+  } else {
+    fb.style.background = 'var(--contra-tenue)';
+    fb.style.border = '1px solid var(--contra)';
+    fb.style.color = 'var(--contra)';
+    fb.innerHTML = '<b>&#9888; Acert&oacute; ' + aciertos + ' de ' + nombres.length + '.</b> ' +
+      'No se le indica cu&aacute;les para que vuelva a la norma y no descarte por tanteo. ' +
+      'Rev&iacute;selas en este orden: la Secci&oacute;n Innumerada de la S.A.S. y su proceso de ' +
+      'transformaci&oacute;n, el Art. 238 de la Ley de Compa&ntilde;&iacute;as, y los Arts. 113 a 115 ' +
+      'del C&oacute;digo de Comercio de 2019.';
+    estado.preguntasCorrectas = false;
   }
 }
 
