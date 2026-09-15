@@ -647,11 +647,81 @@ function procesarDatosEstudiante() {
   }
 }
 
+/* ---------------------------------------------------------------------
+   LA PUERTA DE LA REDACCIÓN
+   Antes solo se comprobaban las tres preguntas de opción múltiple, de modo
+   que se podía dejar el acta entera en blanco, marcar tres casillas y emitir
+   el PDF. El acta ES la tarea: sin ella no hay nada que entregar.
+   --------------------------------------------------------------------- */
+var MINIMOS = {
+  'acta-quorum': [120, 'la constatación de quórum y la cláusula de Junta Universal'],
+  'acta-p1':     [250, 'el Punto 1, mercantilidad y Código de Comercio'],
+  'acta-p2':     [250, 'el Punto 2, exigibilidad cambiaria y prescripción'],
+  'acta-p3':     [250, 'el Punto 3, oferta de inversión y transformación societaria'],
+  'acta-p4':     [250, 'el Punto 4, auditoría externa y blindaje patrimonial']
+};
+var MINIMO_EJES = 4;   // de los seis del validador
+
+function faltaPorRedactar() {
+  var faltan = [];
+  for (var id in MINIMOS) {
+    var el = document.getElementById(id);
+    var n = (el && el.value ? el.value.trim().length : 0);
+    if (n < MINIMOS[id][0]) {
+      faltan.push('· ' + MINIMOS[id][1] + ' — lleva ' + n +
+                  ' de ' + MINIMOS[id][0] + ' caracteres');
+    }
+  }
+  var f = document.getElementById('acta-fecha');
+  var h = document.getElementById('acta-hora');
+  if (!f || !f.value) faltan.push('· la fecha de la junta');
+  if (!h || !h.value) faltan.push('· la hora de la junta');
+  return faltan;
+}
+
+function ejesPendientes() {
+  var nombres = {
+    art1: 'mercantilidad y Código de Comercio',
+    doctrina: 'doctrina del bloque',
+    titulos: 'títulos valores',
+    art238: 'Junta Universal, Art. 238',
+    sociedades: 'transformación societaria',
+    auditoria: 'auditoría externa'
+  };
+  var pend = [];
+  for (var k in nombres) {
+    var el = document.getElementById('chk-' + k);
+    if (el && el.className.indexOf('ok') === -1) pend.push('· ' + nombres[k]);
+  }
+  return pend;
+}
+
 function irAPaso(paso) {
   if (paso > 1 && (!estado.nombre || !estado.cedula)) {
     alert('Por favor ingrese su Nombre y Número de Cédula antes de continuar.');
     return;
   }
+
+  // Para pasar del paso 3 en adelante, el acta tiene que estar redactada.
+  if (paso >= 4) {
+    actualizarVistaPrevia();
+    var faltan = faltaPorRedactar();
+    if (faltan.length) {
+      alert('El acta todavía no está redactada. Falta:\n\n' + faltan.join('\n') +
+        '\n\nEl acta es la tarea: no se puede avanzar dejándola en blanco.');
+      irAPaso(3);
+      return;
+    }
+    var pend = ejesPendientes();
+    if (pend.length > (6 - MINIMO_EJES)) {
+      alert('Su redacción tiene extensión suficiente, pero no menciona los ejes que el ' +
+        'caso exige. El validador no reconoce todavía:\n\n' + pend.join('\n') +
+        '\n\nRevise la lista de comprobación del paso 3 antes de continuar.');
+      irAPaso(3);
+      return;
+    }
+  }
+
   if (paso === 5 && !estado.preguntasCorrectas) {
     alert('Debe responder y verificar las preguntas del Control Registral antes de generar el Acta Oficial.');
     return;
@@ -727,10 +797,10 @@ function actualizarVistaPrevia() {
   document.getElementById('pdf-txt-fecha').textContent = fecha;
   document.getElementById('pdf-txt-hora').textContent = hora;
   document.getElementById('pdf-txt-quorum').textContent = quorum;
-  document.getElementById('pdf-txt-p1').textContent = p1 || '[Pendiente de redacción por el estudiante]';
-  document.getElementById('pdf-txt-p2').textContent = p2 || '[Pendiente de redacción por el estudiante]';
-  document.getElementById('pdf-txt-p3').textContent = p3 || '[Pendiente de redacción por el estudiante]';
-  document.getElementById('pdf-txt-p4').textContent = p4 || '[Pendiente de redacción por el estudiante]';
+  document.getElementById('pdf-txt-p1').textContent = p1 || '[SIN REDACTAR — el acta no debe emitirse así]';
+  document.getElementById('pdf-txt-p2').textContent = p2 || '[SIN REDACTAR — el acta no debe emitirse así]';
+  document.getElementById('pdf-txt-p3').textContent = p3 || '[SIN REDACTAR — el acta no debe emitirse así]';
+  document.getElementById('pdf-txt-p4').textContent = p4 || '[SIN REDACTAR — el acta no debe emitirse así]';
   document.getElementById('pdf-pareja').textContent = estado.pareja || 'Individual / Por asignar';
 
   // Generar Hash Simulado
@@ -772,15 +842,66 @@ function verificarPreguntas() {
 
 function descargarPDF() {
   actualizarVistaPrevia();
+
+  // Guardia: el acta no puede salir con los huecos sin redactar.
+  var faltan = faltaPorRedactar();
+  if (faltan.length) {
+    alert('No se puede emitir el acta: todavía falta redactar.\n\n' + faltan.join('\n'));
+    irAPaso(3);
+    return;
+  }
+
   var element = document.getElementById('documento-pdf');
+  var banda   = document.querySelector('.banda');
+  var main    = document.querySelector('main.contenedor');
+  var scrollPrevio = window.scrollY;
+
+  /* POR QUÉ SE OCULTA LA PÁGINA ANTES DE RENDERIZAR
+     html2canvas captura en coordenadas de DOCUMENTO, no del elemento. Con la
+     página desplazada y el acta a miles de píxeles del inicio, el lienzo salía
+     en blanco. Es el mismo fallo que tenían los foros del aula: allí, medido,
+     daba cero píxeles de tinta con la página visible y 3.923 ocultándola.
+     Se saca el acta del flujo, se sube al inicio, se fotografía y se restaura
+     todo, incluido el punto donde estaba el estudiante. */
+  var padre = element.parentNode;
+  var marca = document.createComment('acta');
+  padre.insertBefore(marca, element);
+
+  var estilosPrevios = element.getAttribute('style') || '';
+  if (banda) banda.style.display = 'none';
+  if (main)  main.style.display  = 'none';
+  document.body.appendChild(element);
+  element.setAttribute('style', estilosPrevios +
+    ';display:block;position:static;margin:0 auto;max-width:800px;');
+  window.scrollTo(0, 0);
+
+  function restaurar() {
+    element.setAttribute('style', estilosPrevios);
+    padre.insertBefore(element, marca);
+    if (marca.parentNode) marca.parentNode.removeChild(marca);
+    if (banda) banda.style.display = '';
+    if (main)  main.style.display  = '';
+    window.scrollTo(0, scrollPrevio);
+  }
+
   var opt = {
     margin: [10, 10, 10, 10],
     filename: 'Acta_Caso_Harvard_AndesLogistics_' + (estado.cedula || 'UCACUE') + '.pdf',
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['avoid-all', 'css'] }
   };
-  html2pdf().set(opt).from(element).save();
+
+  // Un respiro para que el navegador recomponga antes de fotografiar.
+  setTimeout(function () {
+    html2pdf().set(opt).from(element).save()
+      .then(restaurar)
+      .catch(function () {
+        restaurar();
+        alert('No se pudo generar el acta. Inténtelo otra vez.');
+      });
+  }, 350);
 }
 </script>
 
