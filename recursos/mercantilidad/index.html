@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>¿Mercantil o civil? · Seis decisiones · Derecho Mercantil y Societario</title>
+<style>
+:root{
+  --papel:#f6f6f4; --papel-alt:#ececea; --blanco:#fff;
+  --tinta:#17181a; --tinta-suave:#33353a; --nota:#474745;
+  --acento:#0a5757; --acento-claro:#14807f; --acento-tenue:#e2eeed;
+  --contra:#8a2b2b; --contra-tenue:#f4e7e7; --contra-linea:#d9b3b3;
+  --ambar:#7a5200; --ambar-tenue:#fdf6e3; --ambar-linea:#e0cd93;
+  --verde:#14603a; --verde-tenue:#e6f0ea; --verde-linea:#8bbfa3;
+  --linea:#d0d0cd;
+  --serif:Charter,"Georgia","Times New Roman",serif;
+  --titulo:"Segoe UI",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--papel);color:var(--tinta);
+  font-family:var(--serif);font-size:17px;line-height:1.62}
+h1,h2,h3{font-family:var(--titulo);font-weight:600;line-height:1.24;margin:0}
+.oculto{display:none !important}
+
+.banda{background:var(--acento);color:#fff;padding:1.1rem 1.2rem}
+.banda .interior{max-width:760px;margin:0 auto;
+  display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap}
+.banda .emisor{font-family:var(--titulo);font-size:.6rem;letter-spacing:.2em;
+  text-transform:uppercase;color:#cfe3e2;margin:0 0 .3rem}
+.banda h1{font-size:1.25rem}
+.banda .cuenta{font-family:var(--titulo);font-size:.82rem;color:#cfe3e2;white-space:nowrap}
+
+.barra{height:5px;background:var(--papel-alt)}
+.barra div{height:100%;background:var(--acento-claro);width:0;transition:width .35s}
+
+.hoja{max-width:760px;margin:0 auto;padding:1.4rem 1.2rem 4rem}
+
+.intro{background:var(--blanco);border:1px solid var(--linea);border-radius:4px;
+  padding:1.1rem 1.25rem;margin-bottom:1.1rem}
+.intro h2{font-size:1.1rem;color:var(--acento);margin-bottom:.5rem}
+.intro p{margin:0 0 .8rem}
+.intro p:last-child{margin-bottom:0}
+
+.ficha{background:var(--blanco);border:1px solid var(--linea);
+  border-top:5px solid var(--acento);border-radius:4px;
+  padding:1.2rem 1.3rem;margin-bottom:1rem}
+.ficha .num{font-family:var(--titulo);font-size:.64rem;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--nota);margin-bottom:.5rem}
+.ficha .hecho{font-size:1.06rem;line-height:1.6;margin:0 0 1.1rem}
+.ficha .hecho b{color:var(--acento)}
+
+.opciones{display:flex;flex-direction:column;gap:.55rem}
+.opciones button{text-align:left;font-family:var(--titulo);font-size:.96rem;
+  font-weight:600;padding:.8rem .95rem;border:1px solid var(--linea);
+  border-radius:4px;background:var(--papel-alt);color:var(--tinta-suave);
+  cursor:pointer;line-height:1.35}
+.opciones button:hover:not(:disabled){border-color:var(--acento-claro);background:var(--acento-tenue)}
+.opciones button:disabled{cursor:default;opacity:.55}
+.opciones button.acierto{background:var(--verde-tenue);color:var(--verde);
+  border-color:var(--verde-linea);opacity:1}
+.opciones button.fallo{background:var(--contra-tenue);color:var(--contra);
+  border-color:var(--contra);opacity:1}
+.opciones button .sub{display:block;font-weight:400;font-size:.82rem;
+  color:var(--nota);margin-top:.15rem}
+.opciones button.acierto .sub{color:var(--verde)}
+.opciones button.fallo .sub{color:var(--contra)}
+
+.vuelta{margin-top:1.1rem;border-top:1px solid var(--linea);padding-top:1rem}
+.vuelta h3{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--acento);margin-bottom:.5rem}
+.vuelta p{margin:0 0 .75rem;font-size:.97rem}
+.vuelta p:last-child{margin-bottom:0}
+.norma{background:var(--acento-tenue);border-left:4px solid var(--acento-claro);
+  border-radius:0 3px 3px 0;padding:.65rem .85rem;margin:.6rem 0;font-size:.93rem}
+.norma b{color:var(--acento)}
+.descarte{background:var(--papel-alt);border-left:4px solid var(--nota);
+  border-radius:0 3px 3px 0;padding:.6rem .85rem;margin:.5rem 0;font-size:.9rem;color:var(--tinta-suave)}
+.descarte b{font-family:var(--titulo);font-size:.82rem}
+.ojo{background:var(--ambar-tenue);border:1px solid var(--ambar-linea);
+  border-left:4px solid var(--ambar);border-radius:0 3px 3px 0;
+  padding:.65rem .85rem;margin:.6rem 0;font-size:.92rem;color:#4a3a10}
+
+.btn{font-family:var(--titulo);font-size:.95rem;font-weight:600;
+  background:var(--acento);color:#fff;border:1px solid var(--acento);
+  border-radius:4px;padding:.65rem 1.3rem;cursor:pointer;min-height:44px}
+.btn:hover{background:var(--acento-claro)}
+.btn.sec{background:transparent;color:var(--acento)}
+.btn.sec:hover{background:var(--acento-tenue)}
+.acciones{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem}
+
+.cierre{background:var(--blanco);border:1px solid var(--linea);
+  border-top:5px solid var(--acento);border-radius:4px;padding:1.3rem}
+.cierre h2{font-size:1.15rem;color:var(--acento);margin-bottom:.6rem}
+.cierre .tanteo{font-family:var(--titulo);font-size:2.1rem;font-weight:700;
+  color:var(--acento);line-height:1.1;margin:.4rem 0}
+.cierre table{width:100%;border-collapse:collapse;font-size:.88rem;margin:.9rem 0}
+.cierre td{border-bottom:1px solid var(--linea);padding:.4rem .3rem;vertical-align:top}
+.cierre td:first-child{width:1.6rem;font-family:var(--titulo);font-weight:700}
+.cierre td.si{color:var(--verde)}
+.cierre td.no{color:var(--contra)}
+
+.pie{max-width:760px;margin:0 auto;padding:1.2rem;border-top:1px solid var(--linea);
+  font-family:var(--titulo);font-size:.78rem;color:var(--nota)}
+</style>
+</head>
+<body>
+
+<div class="banda">
+  <div class="interior">
+    <div>
+      <p class="emisor">Universidad Católica de Cuenca · Derecho Mercantil y Societario · Bloque 1</p>
+      <h1>¿Mercantil, civil, o mercantil solo para uno?</h1>
+    </div>
+    <div class="cuenta" id="cuenta">Ficha 1 de 6</div>
+  </div>
+</div>
+<div class="barra"><div id="progreso"></div></div>
+
+<div class="hoja">
+
+  <div class="intro" id="intro">
+    <h2>Seis decisiones, con el Código en la mano</h2>
+    <p>La trampa de este tema es creer que la mercantilidad depende de <b>quién</b> contrata.
+    Depende de <b>qué</b> se contrata, con qué propósito, y de lo que diga el artículo.</p>
+    <p>En cada ficha lee un hecho y elige. La tarjeta se da vuelta y le muestra el artículo
+    que lo resuelve y por qué fallan las otras dos opciones. <b>No hay nota ni se guarda
+    nada</b>: es para equivocarse aquí y no en el foro.</p>
+    <p>Tenga abierto el <b>Código de Comercio de 2019</b>. Si contesta de memoria, el recurso
+    no sirve para nada.</p>
+    <div class="acciones">
+      <button type="button" class="btn" id="b-empezar">Empezar</button>
+    </div>
+  </div>
+
+  <div id="zona"></div>
+
+  <div class="cierre oculto" id="cierre"></div>
+
+</div>
+
+<div class="pie">
+  Recurso de refuerzo de la Clase 1 del Bloque 1 · articulado cotejado contra el Código de
+  Comercio de 2019 · Ab. Carlos Eduardo Chica-Villacís, Mgtr.
+</div>
+
+<script>
+/* =====================================================================
+   SEIS DECISIONES DE MERCANTILIDAD
+   Autocomprobación, sin nota y sin envío. Todo el articulado citado se
+   cotejó contra el texto del Código de Comercio de 2019.
+
+   Las tres opciones son siempre las mismas para que el estudiante no
+   pueda decidir por descarte de formato, solo por el contenido.
+   ===================================================================== */
+
+var OPCIONES = [
+  ['mercantil', 'Mercantil para las dos partes',
+   'El acto es de comercio y ambas partes quedan bajo el Código de Comercio.'],
+  ['unilateral', 'Mercantil solo para una de las partes',
+   'Es acto de comercio, pero una de las partes no es comerciante ni actúa con ese propósito.'],
+  ['civil', 'Civil',
+   'El acto queda fuera del Código de Comercio y se rige por el Código Civil.']
+];
+
+var FICHAS = [
+  {
+    hecho: '<b>Frutos del Austro Cía. Ltda.</b> vende por su tienda web una deshidratadora ' +
+           'de fruta a la <b>Sra. Rosa Pauta</b>, jubilada, que la compra para secar la fruta ' +
+           'de su huerto y consumirla en casa.',
+    clave: 'unilateral',
+    norma: 'El <b>Art. 8, literal j)</b> califica como acto de comercio «las actividades ' +
+           'mercantiles realizadas por medio de establecimientos físicos <b>o sitios ' +
+           'virtuales</b>, donde se oferten productos o servicios». Y el <b>Art. 7</b> ' +
+           'basta con que <b>al menos uno</b> de los sujetos intervenga con el propósito de ' +
+           'generar un beneficio económico.',
+    porque: 'Rosa no es comerciante y no compra para revender. Pero eso no saca la operación ' +
+            'del Código: el <b>Art. 1</b> dice que el Código rige los actos y contratos de ' +
+            'comercio <b>aunque sean ejecutados por no comerciantes</b>, y el <b>Art. 4</b> ' +
+            'añade que quien ejecuta ocasionalmente operaciones mercantiles no se considera ' +
+            'comerciante, <b>pero queda sujeto a este Código en cuanto a dichas operaciones</b>.',
+    descartes: [
+      ['mercantil', 'Para que lo fuera, Rosa tendría que ser comerciante (Art. 2) o actuar ' +
+        'con propósito de beneficio económico. Comprar para el consumo propio no es ninguna ' +
+        'de las dos cosas.'],
+      ['civil', 'Es el error frecuente, y lo desmiente el Art. 1 con todas las letras. La ' +
+        'condición del comprador no borra la naturaleza del acto.']
+    ],
+    ojo: 'La etiqueta «unilateralmente mercantil» <b>no está en el Código</b>: es doctrina, ' +
+         'y la leyó en el compendio en la clasificación de Mantilla Molina. El mecanismo ' +
+         'legal son los Arts. 1 y 4.'
+  },
+  {
+    hecho: 'La misma empresa vende <b>la misma deshidratadora</b>, el mismo día y al mismo ' +
+           'precio, al <b>Sr. Julio Ortega</b>, que tiene un puesto en el mercado y la ' +
+           'comprará para secar la fruta que <b>revende</b> allí.',
+    clave: 'mercantil',
+    norma: 'El <b>Art. 2, literal a)</b> hace comerciante a la persona natural que, teniendo ' +
+           'capacidad para contratar, <b>hace del comercio su ocupación habitual</b>. Y el ' +
+           'párrafo final del <b>Art. 8</b> cierra el círculo: «Se tendrán así mismo como ' +
+           'actos de comercio <b>todos los relacionados con actividades o empresas de ' +
+           'comercio</b>».',
+    porque: 'Aquí las dos partes actúan con sentido económico, en los términos del ' +
+            '<b>Art. 7</b>. La deshidratadora no se compra para consumir: se compra para ' +
+            'producir lo que se vende. Es un bien afectado a una actividad de comercio.',
+    descartes: [
+      ['unilateral', 'Esa sería la respuesta si el comprador estuviera fuera del comercio. ' +
+        'Julio no lo está: revende de forma habitual.'],
+      ['civil', 'Ningún elemento del caso saca la operación del Código. Al contrario, los dos ' +
+        'sujetos están dentro.']
+    ],
+    ojo: 'Compare esta ficha con la anterior. <b>Cambió una sola cosa</b> —el destino del ' +
+         'bien— y con ella cambió el régimen. Eso es lo que hay que saber ver.'
+  },
+  {
+    hecho: 'Dos vecinos de Loja, <b>ninguno de los dos comerciante</b>, formalizan un ' +
+           'préstamo personal de USD 3.000 suscribiendo una <b>letra de cambio</b>.',
+    clave: 'mercantil',
+    norma: 'El <b>Art. 8, literal l)</b> lo resuelve por su texto: son actos de comercio ' +
+           '«todo lo concerniente a letras de cambio o pagarés a la orden, <b>aún entre no ' +
+           'comerciantes</b>».',
+    porque: 'El literal califica el acto <b>por su forma</b>, no por la condición de quienes ' +
+            'lo celebran. La letra de cambio es mercantil siempre, la firme quien la firme y ' +
+            'sea cual sea el negocio que la origina.',
+    descartes: [
+      ['unilateral', 'No hay asimetría que repartir: aquí ninguno de los dos es comerciante ' +
+        'y, aun así, el acto es mercantil para ambos. La ley no distingue.'],
+      ['civil', 'Es lo que sugiere la intuición —dos particulares, un préstamo personal— y ' +
+        'es exactamente lo que el literal l) excluye.']
+    ],
+    ojo: 'Esta ficha rompe la regla de «depende de quién contrata» mejor que ninguna. El ' +
+         'préstamo que hay detrás puede ser civil; <b>el título es mercantil</b>.'
+  },
+  {
+    hecho: 'La <b>Dra. Carla Jaramillo</b>, abogada con estudio propio en Cuenca, compra una ' +
+           'computadora portátil en un almacén de la ciudad para usarla <b>en su despacho</b>.',
+    clave: 'unilateral',
+    norma: 'Para el vendedor es acto de comercio: el <b>Art. 8, literal i)</b> incluye «las ' +
+           'empresas de almacenes, tiendas, bazares, fondas, cafés y otros establecimientos ' +
+           'semejantes». Para la compradora operan los <b>Arts. 1 y 4</b>.',
+    porque: 'El ejercicio de una profesión liberal <b>no es comercio</b>: la abogada no hace ' +
+            'del comercio su ocupación habitual (<b>Art. 2</b>), no compra para enajenar ni ' +
+            'para arrendar, y su despacho no es una empresa de comercio. Compra un bien para ' +
+            'trabajar, igual que Rosa compró uno para su casa.',
+    descartes: [
+      ['mercantil', 'Aquí está la trampa fina. Se parece al caso de Julio —alguien que compra ' +
+        'un bien para su actividad— pero <b>la actividad de Julio es comercio y la de la ' +
+        'abogada no</b>. El párrafo final del Art. 8 exige que el acto esté relacionado con ' +
+        'actividades o empresas <b>de comercio</b>.'],
+      ['civil', 'Otra vez el Art. 1: el acto es de comercio por el lado del almacén, y eso ' +
+        'basta para que el Código lo alcance.']
+    ],
+    ojo: 'Si acertó las fichas 2 y 4, ya sabe distinguir lo que confunde a casi todos: no es ' +
+         '«¿compró para su trabajo?», es <b>«¿su trabajo es comercio?»</b>.'
+  },
+  {
+    hecho: '<b>Don Aurelio Vintimilla</b>, jubilado que nunca ejerció el comercio, hereda de ' +
+           'su hermano una <b>ferretería</b> en Azogues y la vende completa —local, ' +
+           'inventario, nombre y clientela— a un tercero.',
+    clave: 'mercantil',
+    norma: 'El <b>Art. 8, literal c)</b> es directo: son actos de comercio «la compra o ' +
+           'enajenación de <b>establecimientos de comercio</b>, y la prenda, arrendamiento, ' +
+           'administración y demás operaciones análogas relacionadas con los mismos».',
+    porque: 'El literal califica el acto <b>por su objeto</b>. Lo que se vende es un ' +
+            'establecimiento de comercio, y eso no cambia porque quien lo venda no haya sido ' +
+            'nunca comerciante. El <b>Art. 1</b> lo confirma.',
+    descartes: [
+      ['unilateral', 'No hay asimetría relevante: el objeto del contrato es mercantil para ' +
+        'los dos lados de la operación, con independencia de la historia personal de don Aurelio.'],
+      ['civil', 'Sería confundir la cualidad del sujeto con la naturaleza del acto, que es ' +
+        'justamente el error que este recurso quiere quitarle.']
+    ],
+    ojo: 'Herederos que venden el negocio del difunto: es un caso realísimo de estudio ' +
+         'jurídico, y llega con el cliente convencido de que «esto es civil, yo no soy ' +
+         'comerciante».'
+  },
+  {
+    hecho: '<b>Frutos del Austro Cía. Ltda.</b> —una compañía mercantil, comerciante por el ' +
+           'Art. 2— arrienda un departamento en Cuenca para que <b>viva su gerente</b>. No ' +
+           'lo subarrienda ni lo destina a la actividad productiva.',
+    clave: 'civil',
+    norma: 'El <b>Art. 8, literal b)</b> cubre «la compra o permuta de bienes muebles con ' +
+           'destino a arrendarlos… y el arrendamiento de toda clase de bienes <b>para ' +
+           'subarrendarlos</b>». Aquí no hay reventa ni subarriendo. Y el <b>Art. 5</b> ' +
+           'remite: en lo no regulado, el <b>Código Civil</b>.',
+    porque: 'Ser comerciante <b>no convierte en mercantil todo lo que se hace</b>. El ' +
+            '<b>Art. 7</b> exige sentido económico dentro de una actividad de producción, ' +
+            'intercambio o servicios en un mercado. Un arriendo de vivienda para el ' +
+            'directivo no lo es.',
+    descartes: [
+      ['mercantil', 'Es el error simétrico del de la ficha 1: allí se negaba la mercantilidad ' +
+        'porque el comprador no era comerciante; aquí se afirmaría porque el arrendatario sí ' +
+        'lo es. Los dos razonamientos miran al sujeto y no al acto.'],
+      ['unilateral', 'Tampoco: para que fuera mercantil siquiera por un lado, alguno de los ' +
+        'dos tendría que celebrarlo como acto de comercio, y el arrendador particular tampoco ' +
+        'lo hace.']
+    ],
+    ojo: 'Esta es <b>la ficha discutible</b>, y va a propósito. Un abogado contrario ' +
+         'argumentaría con el párrafo final del Art. 8 —actos «relacionados con actividades o ' +
+         'empresas de comercio»— que la vivienda del gerente sirve a la empresa. La respuesta ' +
+         'defendible sigue siendo civil, pero <b>si usted vio esa objeción, está pensando ' +
+         'como abogado</b>. Llévela al foro.'
+  }
+];
+
+var i = 0;
+var respuestas = [];
+
+function $(id) { return document.getElementById(id); }
+
+function pinta() {
+  var f = FICHAS[i];
+  $('cuenta').textContent = 'Ficha ' + (i + 1) + ' de ' + FICHAS.length;
+  $('progreso').style.width = (100 * i / FICHAS.length) + '%';
+
+  $('zona').innerHTML =
+    '<div class="ficha">' +
+      '<div class="num">Ficha ' + (i + 1) + '</div>' +
+      '<p class="hecho">' + f.hecho + '</p>' +
+      '<div class="opciones">' +
+        OPCIONES.map(function (o) {
+          return '<button type="button" data-v="' + o[0] + '">' + o[1] +
+                 '<span class="sub">' + o[2] + '</span></button>';
+        }).join('') +
+      '</div>' +
+      '<div class="vuelta oculto" id="vuelta"></div>' +
+    '</div>';
+
+  $('zona').querySelectorAll('.opciones button').forEach(function (b) {
+    b.addEventListener('click', function () { responde(b.dataset.v); });
+  });
+}
+
+function responde(v) {
+  var f = FICHAS[i];
+  var acerto = (v === f.clave);
+  respuestas.push(acerto);
+
+  $('zona').querySelectorAll('.opciones button').forEach(function (b) {
+    b.disabled = true;
+    if (b.dataset.v === f.clave) b.className = 'acierto';
+    else if (b.dataset.v === v) b.className = 'fallo';
+  });
+
+  var nombre = OPCIONES.find(function (o) { return o[0] === f.clave; })[1];
+
+  $('vuelta').innerHTML =
+    '<h3>' + (acerto ? '✓ Correcto' : '✗ La respuesta es: ' + nombre) + '</h3>' +
+    '<div class="norma"><b>La norma que lo resuelve.</b> ' + f.norma + '</div>' +
+    '<p>' + f.porque + '</p>' +
+    f.descartes.map(function (d) {
+      var etq = OPCIONES.find(function (o) { return o[0] === d[0]; })[1];
+      return '<div class="descarte"><b>Por qué no «' + etq + '».</b> ' + d[1] + '</div>';
+    }).join('') +
+    (f.ojo ? '<div class="ojo">' + f.ojo + '</div>' : '') +
+    '<div class="acciones">' +
+      '<button type="button" class="btn" id="b-siguiente">' +
+      (i + 1 < FICHAS.length ? 'Siguiente ficha &rarr;' : 'Ver el resumen') +
+      '</button></div>';
+
+  $('vuelta').classList.remove('oculto');
+  $('b-siguiente').addEventListener('click', avanza);
+  $('vuelta').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function avanza() {
+  i++;
+  if (i < FICHAS.length) { pinta(); window.scrollTo(0, 0); }
+  else cierra();
+}
+
+function cierra() {
+  $('zona').innerHTML = '';
+  $('cuenta').textContent = 'Terminado';
+  $('progreso').style.width = '100%';
+
+  var aciertos = respuestas.filter(Boolean).length;
+  var mensaje;
+  if (aciertos === 6) {
+    mensaje = 'Las seis. Está listo para el foro: lo que le van a discutir es precisamente ' +
+      'la ficha 1 y su espejo, la ficha 6.';
+  } else if (aciertos >= 4) {
+    mensaje = 'Buena base. Vuelva a las que falló y fíjese en una sola cosa: si su ' +
+      'razonamiento miraba al sujeto o al acto.';
+  } else {
+    mensaje = 'Conviene repetirlo con el Código abierto. El patrón que falla casi siempre es ' +
+      'el mismo: decidir por quién contrata en vez de por qué se contrata.';
+  }
+
+  $('cierre').innerHTML =
+    '<h2>Seis decisiones, hechas</h2>' +
+    '<div class="tanteo">' + aciertos + ' de 6</div>' +
+    '<p>' + mensaje + '</p>' +
+    '<table>' + respuestas.map(function (a, n) {
+      return '<tr><td class="' + (a ? 'si' : 'no') + '">' + (a ? '✓' : '✗') + '</td>' +
+             '<td>Ficha ' + (n + 1) + ' · ' +
+             OPCIONES.find(function (o) { return o[0] === FICHAS[n].clave; })[1] + '</td></tr>';
+    }).join('') + '</table>' +
+    '<div class="norma"><b>Lo que hay que llevarse.</b> La mercantilidad no depende de quién ' +
+    'contrata. Depende del <b>acto</b> —Art. 8—, del <b>propósito</b> —Art. 7— y de que el ' +
+    '<b>Art. 1</b> alcanza los actos de comercio aunque los ejecuten no comerciantes.</div>' +
+    '<div class="acciones">' +
+      '<button type="button" class="btn sec" id="b-otra">Repetirlo</button>' +
+    '</div>';
+
+  $('cierre').classList.remove('oculto');
+  $('b-otra').addEventListener('click', function () {
+    i = 0; respuestas = [];
+    $('cierre').classList.add('oculto');
+    pinta(); window.scrollTo(0, 0);
+  });
+  window.scrollTo(0, 0);
+}
+
+$('b-empezar').addEventListener('click', function () {
+  $('intro').classList.add('oculto');
+  pinta();
+});
+</script>
+</body>
+</html>
