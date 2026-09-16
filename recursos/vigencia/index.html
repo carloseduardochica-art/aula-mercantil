@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>¿Qué norma rige qué? · Control de vigencia · Derecho Mercantil y Societario</title>
+<style>
+:root{
+  --papel:#f6f6f4; --papel-alt:#ececea; --blanco:#fff;
+  --tinta:#17181a; --tinta-suave:#33353a; --nota:#474745;
+  --acento:#0a5757; --acento-claro:#14807f; --acento-tenue:#e2eeed;
+  --contra:#8a2b2b; --contra-tenue:#f4e7e7; --contra-linea:#d9b3b3;
+  --ambar:#7a5200; --ambar-tenue:#fdf6e3; --ambar-linea:#e0cd93;
+  --verde:#14603a; --verde-tenue:#e6f0ea; --verde-linea:#8bbfa3;
+  --linea:#d0d0cd;
+  --serif:Charter,"Georgia","Times New Roman",serif;
+  --titulo:"Segoe UI",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--papel);color:var(--tinta);
+  font-family:var(--serif);font-size:17px;line-height:1.62}
+h1,h2,h3,h4{font-family:var(--titulo);font-weight:600;line-height:1.24;margin:0}
+.oculto{display:none !important}
+
+.banda{background:var(--acento);color:#fff;padding:1.1rem 1.2rem}
+.banda .interior{max-width:760px;margin:0 auto;
+  display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap}
+.banda .emisor{font-family:var(--titulo);font-size:.6rem;letter-spacing:.2em;
+  text-transform:uppercase;color:#cfe3e2;margin:0 0 .3rem}
+.banda h1{font-size:1.25rem}
+.banda .intentos{font-family:var(--titulo);font-size:.82rem;color:#cfe3e2;white-space:nowrap}
+
+.hoja{max-width:760px;margin:0 auto;padding:1.4rem 1.2rem 4rem}
+p{margin:0 0 1rem}
+
+.caja{background:var(--blanco);border:1px solid var(--linea);border-radius:4px;
+  padding:1.1rem 1.25rem;margin-bottom:1.1rem}
+.caja h2{font-size:1.1rem;color:var(--acento);margin-bottom:.5rem}
+
+.aviso{background:var(--ambar-tenue);border:1px solid var(--ambar-linea);
+  border-left:5px solid var(--ambar);border-radius:0 3px 3px 0;
+  padding:.8rem .95rem;margin:1rem 0;font-size:.93rem;color:#4a3a10}
+.bien{background:var(--verde-tenue);border:1px solid var(--verde-linea);
+  border-left:5px solid var(--verde);border-radius:0 3px 3px 0;
+  padding:.9rem 1rem;margin:1rem 0;font-size:.95rem;color:#0e4a25}
+.mal{background:var(--contra-tenue);border:1px solid var(--contra-linea);
+  border-left:5px solid var(--contra);border-radius:0 3px 3px 0;
+  padding:.9rem 1rem;margin:1rem 0;font-size:.95rem;color:#5d1f1f}
+
+.pregunta{background:var(--blanco);border:1px solid var(--linea);
+  border-top:4px solid var(--acento);border-radius:4px;
+  padding:1.1rem 1.2rem;margin-bottom:1rem}
+.pregunta .num{font-family:var(--titulo);font-size:.63rem;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--nota);margin-bottom:.45rem}
+.pregunta .enun{font-size:1.02rem;line-height:1.55;margin:0 0 .9rem}
+.pregunta .enun b{color:var(--acento)}
+
+.ops label{display:flex;gap:.65rem;align-items:flex-start;
+  padding:.65rem .75rem;border:1px solid var(--linea);border-radius:4px;
+  margin-bottom:.5rem;cursor:pointer;font-size:.95rem;line-height:1.45;
+  background:var(--papel-alt)}
+.ops label:hover{border-color:var(--acento-claro);background:var(--acento-tenue)}
+.ops input{margin-top:.28rem;flex:0 0 auto;accent-color:var(--acento)}
+.ops label.marcada{border-color:var(--acento);background:var(--acento-tenue)}
+.ops label.bloqueada{cursor:default;opacity:.75}
+.ops label.correcta{border-color:var(--verde-linea);background:var(--verde-tenue);opacity:1}
+
+.razon{margin-top:.9rem;border-top:1px solid var(--linea);padding-top:.8rem;
+  font-size:.93rem}
+.razon .clave{font-family:var(--titulo);font-size:.68rem;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--verde);margin-bottom:.35rem}
+.razon .norma{background:var(--acento-tenue);border-left:4px solid var(--acento-claro);
+  border-radius:0 3px 3px 0;padding:.6rem .8rem;margin:.5rem 0}
+
+.btn{font-family:var(--titulo);font-size:.95rem;font-weight:600;
+  background:var(--acento);color:#fff;border:1px solid var(--acento);
+  border-radius:4px;padding:.7rem 1.4rem;cursor:pointer;min-height:46px}
+.btn:hover:not(:disabled){background:var(--acento-claro)}
+.btn:disabled{background:var(--papel-alt);color:var(--nota);
+  border-color:var(--linea);cursor:not-allowed}
+.btn.sec{background:transparent;color:var(--acento)}
+.btn.sec:hover:not(:disabled){background:var(--acento-tenue)}
+.acciones{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem}
+
+.tanteo{font-family:var(--titulo);font-size:2rem;font-weight:700;
+  color:var(--acento);line-height:1.1;margin:.2rem 0 .5rem}
+
+.pie{max-width:760px;margin:0 auto;padding:1.2rem;border-top:1px solid var(--linea);
+  font-family:var(--titulo);font-size:.78rem;color:var(--nota)}
+</style>
+</head>
+<body>
+
+<div class="banda">
+  <div class="interior">
+    <div>
+      <p class="emisor">Universidad Católica de Cuenca · Derecho Mercantil y Societario · Bloque 1</p>
+      <h1>¿Qué norma rige qué?</h1>
+    </div>
+    <div class="intentos" id="intentos">Intento 1</div>
+  </div>
+</div>
+
+<div class="hoja">
+
+  <div class="caja">
+    <h2>Control de vigencia · cinco preguntas</h2>
+    <p>El error que más caro sale en esta materia no es ignorar la norma: es <b>citar la que
+    ya no rige</b>, o dar por hecho que dice lo que uno recuerda.</p>
+    <p>Las cinco preguntas tienen tres opciones cada una, y <b>las tres son defendibles a
+    primera vista</b>. Solo una resiste el texto. Conteste con el <b>Código de Comercio de
+    2019 abierto</b>; de memoria no se acierta.</p>
+    <div class="aviso">
+      <b>No se le va a decir cuál falló.</b> Solo cuántas. Es a propósito: si supiera cuál,
+      cambiaría esa y seguiría sin volver a la norma. <b>Al tercer intento</b> se abren las
+      respuestas razonadas, para que nadie se quede atascado.
+    </div>
+  </div>
+
+  <div id="preguntas"></div>
+
+  <div class="acciones" id="barra">
+    <button type="button" class="btn" id="b-comprobar" disabled>Comprobar</button>
+  </div>
+
+  <div id="resultado"></div>
+
+</div>
+
+<div class="pie">
+  Recurso de refuerzo de la Clase 1 del Bloque 1 · articulado cotejado contra el Código de
+  Comercio de 2019, el Código Orgánico Monetario y Financiero y el Código Civil ·
+  Ab. Carlos Eduardo Chica-Villacís, Mgtr.
+</div>
+
+<script>
+/* =====================================================================
+   CONTROL DE VIGENCIA NORMATIVA · CINCO PREGUNTAS
+   Autocomprobación, sin nota y sin envío.
+
+   Regla de diseño: no se dice cuál falló, solo cuántas, para que el
+   estudiante vuelva a la norma en vez de descartar por tanteo. Pero a
+   partir del tercer intento se abren las respuestas razonadas: un
+   recurso que puede dejar a alguien encerrado sin aprender no sirve.
+
+   Todo el articulado citado se cotejó contra el texto vigente.
+   ===================================================================== */
+
+var INTENTOS_PARA_ABRIR = 3;
+
+var PREGUNTAS = [
+  {
+    enun: 'En una demanda por una <b>letra de cambio</b> impagada, el abogado del deudor ' +
+          'opone una excepción invocando «el artículo 410 del Código de Comercio». ' +
+          '¿Qué debe responder usted?',
+    ops: [
+      'El artículo 410 está vigente y regula el protesto por falta de aceptación, de modo ' +
+      'que la excepción es improcedente por error de materia, no de norma.',
+      'El artículo 410 pertenece al <b>Código de Comercio de 1960, derogado</b> por el ' +
+      'vigente desde mayo de 2019. La letra de cambio se rige hoy por los <b>artículos ' +
+      '113 a 115</b>.',
+      'El artículo 410 corresponde al Código Orgánico Monetario y Financiero y solo alcanza ' +
+      'al cheque, no a la letra de cambio.'
+    ],
+    clave: 1,
+    razon: 'Es la trampa clásica de la práctica forense ecuatoriana: se sigue citando el ' +
+           'código derogado por costumbre. Antes de contestar el fondo de cualquier ' +
+           'excepción, <b>verifique de qué cuerpo legal es el artículo que le oponen</b>.',
+    norma: 'Código de Comercio de 2019, <b>Arts. 113 a 115</b>, para la letra de cambio. ' +
+           'El Código de 1960 está derogado.'
+  },
+  {
+    enun: 'Un cliente le pregunta dónde está regulado <b>el cheque</b> en el Ecuador. ' +
+          '¿Dónde lo busca?',
+    ops: [
+      'En el <b>Código Orgánico Monetario y Financiero</b>. El Código de Comercio de 2019 ' +
+      'no regula el cheque: lo menciona una sola vez, y de pasada, como forma de pago.',
+      'En el Código de Comercio de 2019, en el mismo título que la letra de cambio y el ' +
+      'pagaré a la orden, por tratarse de los tres títulos valores clásicos.',
+      'En la Ley de Cheques, norma especial que sobrevivió a la expedición del Código de ' +
+      'Comercio de 2019.'
+    ],
+    clave: 0,
+    razon: 'El instrumento de pago más usado del tráfico quedó <b>fuera</b> del Código de ' +
+           'Comercio. Buscarlo ahí es perder la tarde. Y no es un detalle menor: significa ' +
+           'que su régimen lo fija una ley financiera, no la ley mercantil general.',
+    norma: 'El cheque está en el <b>Código Orgánico Monetario y Financiero</b>, a partir ' +
+           'del <b>Art. 479</b>, que fija su contenido y validez.'
+  },
+  {
+    enun: 'Usted analiza un contrato nuevo y comprueba que <b>no encaja en ninguno</b> de ' +
+          'los literales a) a s) del artículo 8 del Código de Comercio. ¿Qué concluye?',
+    ops: [
+      'Que no es acto de comercio. La enumeración del artículo 8 es taxativa, y lo que no ' +
+      'está enumerado queda fuera del ámbito mercantil.',
+      'Que hay que ir directamente al Código Civil por la remisión del artículo 5, porque ' +
+      'se trata de un caso no regulado expresamente por el Código de Comercio.',
+      'Que la enumeración <b>no es cerrada</b>. El propio artículo 8 termina diciendo que ' +
+      'son actos de comercio «todos los relacionados con actividades o empresas de ' +
+      'comercio», y el artículo 7 da el criterio general.'
+    ],
+    clave: 2,
+    razon: 'Casi nadie lee el párrafo que va después del literal s), y es el que decide los ' +
+           'casos difíciles. La opción del Código Civil es tentadora porque el artículo 5 ' +
+           'existe —pero solo opera cuando el caso <b>no está regulado</b>, y aquí sí lo está.',
+    norma: '<b>Art. 8, párrafo final</b> · «Se tendrán así mismo como actos de comercio ' +
+           'todos los relacionados con actividades o empresas de comercio». Y el ' +
+           '<b>Art. 7</b>, con el criterio del beneficio económico.'
+  },
+  {
+    enun: 'Necesita determinar <b>de dónde nace</b> la obligación de un contrato mercantil. ' +
+          '¿Qué norma le da las fuentes de las obligaciones?',
+    ops: [
+      'El artículo 8 del Código de Comercio, que al enumerar los actos de comercio enumera ' +
+      'con ello las fuentes de las obligaciones mercantiles.',
+      'El artículo 6 del Código de Comercio: la costumbre mercantil suple el silencio de la ' +
+      'ley y es, por tanto, la fuente supletoria de toda obligación mercantil.',
+      'El <b>Código Civil</b>. El Código de Comercio no sistematiza las fuentes: su ' +
+      '<b>artículo 5</b> remite, en su defecto, al Código Civil, cuyo <b>artículo 1453</b> ' +
+      'las enumera.'
+    ],
+    clave: 2,
+    razon: 'Es el hallazgo que más sorprende en clase: se busca en el Código de Comercio y ' +
+           '<b>no está</b>. La costumbre del artículo 6 es una fuente real, pero supletoria ' +
+           'y condicionada; no es la teoría general de las fuentes.',
+    norma: '<b>C. Comercio, Art. 5</b> · «se aplicarán por analogía las normas de este ' +
+           'Código y, en su defecto, las del Código Civil». <b>C. Civil, Art. 1453</b> · ' +
+           'contrato, hecho voluntario, hecho dañoso y disposición de la ley.'
+  },
+  {
+    enun: 'El deudor de un <b>pagaré a la orden</b> alega que no se le puede cobrar porque ' +
+          '«el artículo 186 exige protesto notarial previo». ¿Es cierto?',
+    ops: [
+      'Sí. El artículo 186 subordina el cobro del pagaré al protesto, igual que en la letra ' +
+      'de cambio, y sin él la acción caduca.',
+      'No. El <b>artículo 186 es la definición</b> del pagaré. La remisión al régimen de la ' +
+      'letra la hace el <b>artículo 189</b>, y el <b>190</b> equipara al suscriptor con el ' +
+      'aceptante: por eso la <b>acción directa</b> del artículo 160 no depende del protesto.',
+      'No, porque el pagaré a la orden no admite protesto: es un título de obligación ' +
+      'directa y el protesto solo existe para la letra de cambio.'
+    ],
+    clave: 1,
+    razon: 'Aquí se confunden dos cosas distintas: el <b>protesto condiciona el recurso de ' +
+           'regreso</b> contra endosantes y librador, no la acción directa contra el ' +
+           'obligado principal. Y se cita un artículo que dice otra cosa, que es el error ' +
+           'que este control quiere quitarle.',
+    norma: '<b>Art. 186</b> define el pagaré · <b>Art. 189</b> remite al régimen de la letra ' +
+           '· <b>Art. 190</b> equipara al suscriptor con el aceptante · <b>Art. 160</b> · ' +
+           '«La acción cambiaria es directa o de regreso; directa contra el aceptante y sus ' +
+           'avalistas».'
+  }
+];
+
+var intento = 1;
+var abierto = false;
+
+function $(id) { return document.getElementById(id); }
+
+function pinta() {
+  $('preguntas').innerHTML = PREGUNTAS.map(function (p, i) {
+    return '<div class="pregunta" data-p="' + i + '">' +
+      '<div class="num">Pregunta ' + (i + 1) + ' de ' + PREGUNTAS.length + '</div>' +
+      '<p class="enun">' + p.enun + '</p>' +
+      '<div class="ops">' +
+        p.ops.map(function (o, k) {
+          return '<label data-k="' + k + '"><input type="radio" name="p' + i + '" value="' + k + '">' +
+                 '<span>' + o + '</span></label>';
+        }).join('') +
+      '</div>' +
+      '<div class="razon oculto"></div>' +
+    '</div>';
+  }).join('');
+
+  $('preguntas').querySelectorAll('input[type=radio]').forEach(function (r) {
+    r.addEventListener('change', function () {
+      var cont = r.closest('.ops');
+      cont.querySelectorAll('label').forEach(function (l) { l.classList.remove('marcada'); });
+      r.closest('label').classList.add('marcada');
+      $('b-comprobar').disabled = (contestadas() < PREGUNTAS.length);
+    });
+  });
+}
+
+function contestadas() {
+  var n = 0;
+  PREGUNTAS.forEach(function (p, i) {
+    if (document.querySelector('input[name="p' + i + '"]:checked')) n++;
+  });
+  return n;
+}
+
+$('b-comprobar').addEventListener('click', function () {
+  var aciertos = 0;
+  PREGUNTAS.forEach(function (p, i) {
+    var sel = document.querySelector('input[name="p' + i + '"]:checked');
+    if (sel && parseInt(sel.value, 10) === p.clave) aciertos++;
+  });
+
+  var todas = (aciertos === PREGUNTAS.length);
+  abierto = todas || (intento >= INTENTOS_PARA_ABRIR);
+
+  if (abierto) revela();
+
+  $('resultado').innerHTML =
+    '<div class="caja">' +
+      '<div class="tanteo">' + aciertos + ' de ' + PREGUNTAS.length + '</div>' +
+      (todas
+        ? '<div class="bien"><b>Las cinco.</b> Puede ir al foro sabiendo que no va a citar ' +
+          'una norma derogada ni a atribuirle a un artículo lo que no dice. Abajo quedan ' +
+          'las cinco razonadas.</div>'
+        : (abierto
+          ? '<div class="aviso"><b>Tercer intento.</b> Se abren las respuestas razonadas. ' +
+            'Léalas con el Código al lado, no de corrido: lo que importa no es cuál era la ' +
+            'buena, sino por qué las otras dos sonaban bien.</div>'
+          : '<div class="mal"><b>No le voy a decir cuáles.</b> Si se lo dijera, cambiaría ' +
+            'esas y seguiría sin volver a la norma.<br><br>Revíselas en este orden: de qué ' +
+            '<b>código</b> es el artículo que le citan · dónde está regulado el ' +
+            '<b>cheque</b> · el párrafo que va <b>después del literal s)</b> del artículo 8 ' +
+            '· la remisión del <b>artículo 5</b> · y qué dice exactamente el ' +
+            '<b>artículo 186</b>.<br><br>Quedan ' + (INTENTOS_PARA_ABRIR - intento) +
+            ' intento(s) antes de que se abran las respuestas.</div>')) +
+      '<div class="acciones">' +
+        (todas ? '' : '<button type="button" class="btn" id="b-otra">Intentarlo de nuevo</button>') +
+        '<button type="button" class="btn sec" id="b-limpiar">Empezar de cero</button>' +
+      '</div>' +
+    '</div>';
+
+  if (!todas) {
+    $('b-otra').addEventListener('click', function () {
+      intento++;
+      $('intentos').textContent = 'Intento ' + intento;
+      $('resultado').innerHTML = '';
+      if (!abierto) {
+        document.querySelectorAll('input[type=radio]:checked').forEach(function (r) {
+          r.checked = false;
+          r.closest('label').classList.remove('marcada');
+        });
+        $('b-comprobar').disabled = true;
+      }
+      window.scrollTo(0, 0);
+    });
+  }
+  $('b-limpiar').addEventListener('click', function () {
+    intento = 1; abierto = false;
+    $('intentos').textContent = 'Intento 1';
+    $('resultado').innerHTML = '';
+    $('b-comprobar').disabled = true;
+    pinta();
+    window.scrollTo(0, 0);
+  });
+
+  $('resultado').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+});
+
+function revela() {
+  PREGUNTAS.forEach(function (p, i) {
+    var caja = document.querySelector('.pregunta[data-p="' + i + '"]');
+    caja.querySelectorAll('.ops label').forEach(function (l) {
+      l.classList.add('bloqueada');
+      l.querySelector('input').disabled = true;
+      if (parseInt(l.dataset.k, 10) === p.clave) l.classList.add('correcta');
+    });
+    var r = caja.querySelector('.razon');
+    r.innerHTML = '<div class="clave">La que resiste el texto</div>' +
+      '<p style="margin:0 0 .5rem">' + p.razon + '</p>' +
+      '<div class="norma">' + p.norma + '</div>';
+    r.classList.remove('oculto');
+  });
+  $('b-comprobar').disabled = true;
+}
+
+pinta();
+</script>
+</body>
+</html>
