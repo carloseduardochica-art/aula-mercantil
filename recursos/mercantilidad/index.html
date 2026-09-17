@@ -6,13 +6,33 @@
 <title>¿Mercantil o civil? · Seis decisiones · Derecho Mercantil y Societario</title>
 <style>
 :root{
-  --papel:#f6f6f4; --papel-alt:#ececea; --blanco:#fff;
-  --tinta:#17181a; --tinta-suave:#33353a; --nota:#474745;
-  --acento:#0a5757; --acento-claro:#14807f; --acento-tenue:#e2eeed;
-  --contra:#8a2b2b; --contra-tenue:#f4e7e7; --contra-linea:#d9b3b3;
-  --ambar:#7a5200; --ambar-tenue:#fdf6e3; --ambar-linea:#e0cd93;
+  /* ---------------------------------------------------------------
+     PALETA PEDAGÓGICA · el color codifica la función, no la materia.
+     Contraste WCAG comprobado; deuteranopia simulada. Ver
+     PALETA_PEDAGOGICA.md. El color nunca va solo: siempre con rótulo.
+     --------------------------------------------------------------- */
+  --papel:#f7f7f6; --papel-alt:#ebebe9; --blanco:#fff;
+  --tinta:#17181a; --tinta-suave:#33353a; --nota:#4a4a48;
+  --linea:#d2d2cf;
+
+  /* DECIDIR · tu turno */
+  --acento:#2d3a8c; --acento-claro:#3d4da8; --acento-tenue:#eef1fb;
+
+  /* ERROR · no resiste el texto */
+  --contra:#8a2b2b; --contra-tenue:#f7eaea; --contra-linea:#d8b4b4;
+
+  /* ACIERTO */
   --verde:#14603a; --verde-tenue:#e6f0ea; --verde-linea:#8bbfa3;
-  --linea:#d0d0cd;
+
+  /* AVISO · la trampa */
+  --ambar:#7a5200; --ambar-tenue:#fdf6e3; --ambar-linea:#e0cd93;
+
+  /* LA NORMA · aquí manda el texto */
+  --norma:#5b2d82; --norma-tenue:#f2ebf8; --norma-linea:#c3a8da;
+
+  /* LO QUE HAY QUE LLEVARSE · y las cabeceras, deliberadamente neutras */
+  --pizarra:#2f3e46; --pizarra-tenue:#e9eeef; --pizarra-claro:#cfd8da;
+
   --serif:Charter,"Georgia","Times New Roman",serif;
   --titulo:"Segoe UI",system-ui,-apple-system,sans-serif;
 }
@@ -22,13 +42,13 @@ body{margin:0;background:var(--papel);color:var(--tinta);
 h1,h2,h3{font-family:var(--titulo);font-weight:600;line-height:1.24;margin:0}
 .oculto{display:none !important}
 
-.banda{background:var(--acento);color:#fff;padding:1.1rem 1.2rem}
+.banda{background:var(--pizarra);color:#fff;padding:1.1rem 1.2rem}
 .banda .interior{max-width:760px;margin:0 auto;
   display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap}
 .banda .emisor{font-family:var(--titulo);font-size:.6rem;letter-spacing:.2em;
-  text-transform:uppercase;color:#cfe3e2;margin:0 0 .3rem}
+  text-transform:uppercase;color:var(--pizarra-claro);margin:0 0 .3rem}
 .banda h1{font-size:1.25rem}
-.banda .cuenta{font-family:var(--titulo);font-size:.82rem;color:#cfe3e2;white-space:nowrap}
+.banda .cuenta{font-family:var(--titulo);font-size:.82rem;color:var(--pizarra-claro);white-space:nowrap}
 
 .barra{height:5px;background:var(--papel-alt)}
 .barra div{height:100%;background:var(--acento-claro);width:0;transition:width .35s}
@@ -47,7 +67,7 @@ h1,h2,h3{font-family:var(--titulo);font-weight:600;line-height:1.24;margin:0}
 .ficha .num{font-family:var(--titulo);font-size:.64rem;letter-spacing:.18em;
   text-transform:uppercase;color:var(--nota);margin-bottom:.5rem}
 .ficha .hecho{font-size:1.06rem;line-height:1.6;margin:0 0 1.1rem}
-.ficha .hecho b{color:var(--acento)}
+.ficha .hecho b{color:var(--tinta)}   /* enfasis, no funcion */
 
 .opciones{display:flex;flex-direction:column;gap:.55rem}
 .opciones button{text-align:left;font-family:var(--titulo);font-size:.96rem;
@@ -70,9 +90,9 @@ h1,h2,h3{font-family:var(--titulo);font-weight:600;line-height:1.24;margin:0}
   color:var(--acento);margin-bottom:.5rem}
 .vuelta p{margin:0 0 .75rem;font-size:.97rem}
 .vuelta p:last-child{margin-bottom:0}
-.norma{background:var(--acento-tenue);border-left:4px solid var(--acento-claro);
+.norma{background:var(--norma-tenue);border-left:5px solid var(--norma);
   border-radius:0 3px 3px 0;padding:.65rem .85rem;margin:.6rem 0;font-size:.93rem}
-.norma b{color:var(--acento)}
+.norma b{color:var(--norma)}
 .descarte{background:var(--papel-alt);border-left:4px solid var(--nota);
   border-radius:0 3px 3px 0;padding:.6rem .85rem;margin:.5rem 0;font-size:.9rem;color:var(--tinta-suave)}
 .descarte b{font-family:var(--titulo);font-size:.82rem}
@@ -89,10 +109,10 @@ h1,h2,h3{font-family:var(--titulo);font-weight:600;line-height:1.24;margin:0}
 .acciones{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem}
 
 .cierre{background:var(--blanco);border:1px solid var(--linea);
-  border-top:5px solid var(--acento);border-radius:4px;padding:1.3rem}
-.cierre h2{font-size:1.15rem;color:var(--acento);margin-bottom:.6rem}
+  border-top:5px solid var(--pizarra);border-radius:4px;padding:1.3rem}
+.cierre h2{font-size:1.15rem;color:var(--pizarra);margin-bottom:.6rem}
 .cierre .tanteo{font-family:var(--titulo);font-size:2.1rem;font-weight:700;
-  color:var(--acento);line-height:1.1;margin:.4rem 0}
+  color:var(--pizarra);line-height:1.1;margin:.4rem 0}
 .cierre table{width:100%;border-collapse:collapse;font-size:.88rem;margin:.9rem 0}
 .cierre td{border-bottom:1px solid var(--linea);padding:.4rem .3rem;vertical-align:top}
 .cierre td:first-child{width:1.6rem;font-family:var(--titulo);font-weight:700}
