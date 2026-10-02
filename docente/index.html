@@ -48,6 +48,12 @@ table{border-collapse:collapse;width:100%;margin-top:.5em}
 th,td{border-bottom:1px solid var(--linea);padding:.3em .4em;text-align:left}
 th{color:var(--suave);font-weight:500;font-size:.8rem;text-transform:uppercase;letter-spacing:.04em}
 code{font-size:.8rem;overflow-wrap:anywhere}
+.preg{border-top:1px solid var(--linea);padding:.55em 0}
+.preg p{margin:.15em 0}
+.preg .enun{font-weight:500}
+.preg .marca{display:inline-block;min-width:4.6em;font-size:.75rem;font-weight:600;padding:.05em .45em;border-radius:99px;margin-right:.4em;text-align:center}
+.preg .op{color:var(--suave)}
+.seccion-det{margin:.8em 0 .2em;font-size:.8rem;letter-spacing:.05em;text-transform:uppercase;color:var(--suave)}
 .mensaje{color:var(--suave);margin-top:14px}
 .limite{font-size:.85rem;color:var(--suave);margin-top:28px;border-top:1px solid var(--linea);padding-top:12px}
 @media (max-width:560px){ dl{grid-template-columns:1fr} dt{margin-top:.4em} }
@@ -74,8 +80,10 @@ code{font-size:.8rem;overflow-wrap:anywhere}
   <div id="resultados"></div>
 
   <p class="limite"><b>Qué hace cada cosa.</b> Con un <b>pase</b>, la página recalcula la nota
-    a partir de las respuestas, igual que el autocontrol, y emite la constancia en PDF marcada
-    como regenerada por el docente. El pase no guarda la hora de cada respuesta, así que esa
+    a partir de las respuestas, igual que el autocontrol, muestra pregunta por pregunta qué
+    respondió el estudiante y cuál era la correcta (útil para una recalificación), y emite la
+    constancia en PDF marcada como regenerada por el docente. Si el estudiante empezó un segundo
+    intento, su pase trae las respuestas de ese intento, no las del anterior. El pase no guarda la hora de cada respuesta, así que esa
     constancia no informa plazo ni tiempo de trabajo. Con un <b>código</b>, la página comprueba
     que la firma corresponde a los datos y que la nota cuadra con los aciertos. La firma detecta
     un código retocado a mano, pero no es criptográfica: si hay dudas sobre una nota, pida el
@@ -118,6 +126,10 @@ code{font-size:.8rem;overflow-wrap:anywhere}
     return String(s).replace(/[&<>"]/g, function(c){
       return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c];
     });
+  }
+  var lector = new DOMParser();
+  function plano(html){
+    return (lector.parseFromString('<body>' + html, 'text/html').body.textContent || '').replace(/\s+/g, ' ').trim();
   }
   function selloLocal(d){
     var p = function(n){ return (n < 10 ? '0' : '') + n; };
@@ -178,14 +190,25 @@ code{font-size:.8rem;overflow-wrap:anywhere}
     if (!cedulaValida(r.cedula)) r.problemas.push('La cédula no supera el dígito verificador.');
     r.inicio = parseInt(p[5], 10) * 60000;
     var grupo = grupoDe(r.cedula), pos = 0, hechos = 0, aciertos = 0, bruto = 0;
+    /* El detalle de cada pregunta, para revisar una recalificacion. La opcion
+       correcta no esta escrita en el banco: es la que reproduce su firma. */
+    r.detalle = [];
     r.por = B.secciones.map(function(s){
       var bien = 0, hechas = 0;
       s.apartados.forEach(function(a){
         var m = p[4][pos++];
+        var q = B.indice[a.id] && B.indice[a.id].grupos[grupo];
+        var d = { seccion: s.pestana, n: pos, enunciado: q ? plano(q.e) : '(pregunta no encontrada)',
+                  opciones: q ? q.o.map(plano) : [], elegida: null, correcta: null, acierto: false };
+        if (q) for (var k = 0; k < q.o.length; k++) {
+          if (djb2(B.sal + a.id + grupo + q.o[k]) === q.h) d.correcta = k;
+        }
+        r.detalle.push(d);
         if (m === '-') return;
         hechas++;
-        var q = B.indice[a.id] && B.indice[a.id].grupos[grupo];
-        if (q && djb2(B.sal + a.id + grupo + q.o[parseInt(m, 10)]) === q.h) bien++;
+        d.elegida = parseInt(m, 10);
+        d.acierto = d.correcta !== null && d.elegida === d.correcta;
+        if (d.acierto) bien++;
       });
       var n = s.apartados.length, pts = n ? bien * B.puntos_seccion / n : 0;
       hechos += hechas; aciertos += bien; bruto += pts;
@@ -268,6 +291,7 @@ code{font-size:.8rem;overflow-wrap:anywhere}
       ['Plazo y tiempo', 'No constan en el pase de avance']
     ];
     if (!r.completo) datos.push(['Estado', 'INCOMPLETO: ' + r.hechos + ' de ' + B.total + ' apartados']);
+    if (B.sin_nota) datos.push(['Calificación', 'Lectura formativa: no lleva nota']);
     datos.forEach(function(d){
       doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(90);
       doc.text(d[0], IZQ, y); doc.setTextColor(0);
@@ -287,17 +311,22 @@ code{font-size:.8rem;overflow-wrap:anywhere}
       doc.setDrawColor(190); doc.setLineWidth(0.2); doc.line(IZQ, y + 1.6, DER, y + 1.6);
       y += 5.6;
     }
-    fila(['#', 'Sección', 'Aciertos', 'Puntos'], true, 235);
+    var sn = !!B.sin_nota;
+    fila(['#', 'Sección', 'Aciertos', sn ? '' : 'Puntos'], true, 235);
     r.por.forEach(function(s, i){
-      fila([String(i + 1), s.pestana, s.aciertos + ' / ' + s.total, s.puntos.toFixed(2)], false, null);
+      fila([String(i + 1), s.pestana, s.aciertos + ' / ' + s.total, sn ? '' : s.puntos.toFixed(2)], false, null);
     });
-    fila(['', 'Total', r.aciertos + ' / ' + B.total, r.bruto.toFixed(2)], true, 246);
+    fila(['', 'Total', r.aciertos + ' / ' + B.total, sn ? '' : r.bruto.toFixed(2)], true, 246);
 
-    y += 6; salto(20);
-    doc.setDrawColor(0); doc.setLineWidth(0.6); doc.rect(IZQ + 30, y - 6, ANCHO - 60, 13);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(14); doc.setTextColor(0);
-    doc.text('Nota final  ' + fmtNota(r.nota) + ' / ' + B.nota_maxima, 105, y + 2.5, { align: 'center' });
-    y += 15;
+    if (sn) {
+      y += 6;
+    } else {
+      y += 6; salto(20);
+      doc.setDrawColor(0); doc.setLineWidth(0.6); doc.rect(IZQ + 30, y - 6, ANCHO - 60, 13);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(14); doc.setTextColor(0);
+      doc.text('Nota final  ' + fmtNota(r.nota) + ' / ' + B.nota_maxima, 105, y + 2.5, { align: 'center' });
+      y += 15;
+    }
 
     doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(60);
     doc.text('Código de validación', IZQ, y); y += 5;
@@ -319,6 +348,65 @@ code{font-size:.8rem;overflow-wrap:anywhere}
       + r.nombre.replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40) + '_docente.pdf');
   }
 
+  /* ---------- detalle de respuestas ----------
+     Sirve para atender una recalificacion: que respondio el estudiante en cada
+     pregunta, si acerto y cual era la correcta. Solo sale de un pase, que es lo
+     unico que conserva las respuestas; el codigo de la constancia no las trae.
+     Ojo: si el estudiante hizo un segundo intento, su pase trae las respuestas
+     del intento en curso, no las del cerrado. */
+  function letra(k){ return k === null ? '—' : String.fromCharCode(97 + k) + ')'; }
+  function detalleHtml(r){
+    var fallos = r.detalle.filter(function(d){ return d.elegida !== null && !d.acierto; }).length;
+    var h = '<details><summary>Respuestas una por una (' + r.aciertos + ' aciertos, ' + fallos
+          + ' fallos)</summary>', sec = null;
+    r.detalle.forEach(function(d){
+      if (d.seccion !== sec) { sec = d.seccion; h += '<p class="seccion-det">' + esc(sec) + '</p>'; }
+      var marca = d.elegida === null ? '<span class="marca av">Sin responder</span>'
+                : d.acierto ? '<span class="marca ok">Acierto</span>' : '<span class="marca mal">Fallo</span>';
+      h += '<div class="preg"><p class="enun">' + marca + d.n + '. ' + esc(d.enunciado) + '</p>';
+      if (d.elegida !== null) h += '<p>Respondió ' + letra(d.elegida) + ' ' + esc(d.opciones[d.elegida] || '') + '</p>';
+      if (!d.acierto && d.correcta !== null) h += '<p class="op">Correcta: ' + letra(d.correcta) + ' ' + esc(d.opciones[d.correcta]) + '</p>';
+      h += '</div>';
+    });
+    return h + '</details>';
+  }
+
+  function pdfDetalle(r, B){
+    var J = window.jspdf && window.jspdf.jsPDF;
+    if (!J) { alert('No se pudo cargar el generador de PDF. Revise su conexión y recargue la página.'); return; }
+    var doc = new J({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    var IZQ = 18, ANCHO = 174, y = 20;
+    function salto(h){ if (y + h > 284) { doc.addPage(); y = 18; } }
+    function linea(texto, tam, estilo, color, sangria, alto){
+      doc.setFont('helvetica', estilo); doc.setFontSize(tam); doc.setTextColor(color);
+      doc.splitTextToSize(texto, ANCHO - sangria).forEach(function(l){ salto(alto); doc.text(l, IZQ + sangria, y); y += alto; });
+    }
+    linea(B.institucion.toUpperCase() + ' · ' + B.titulo, 8.5, 'normal', 90, 0, 4.5);
+    doc.setFont('times', 'bold'); doc.setFontSize(17); doc.setTextColor(0);
+    y += 3; doc.text('Detalle de respuestas', IZQ, y); y += 7;
+    linea(B.membrete, 9, 'normal', 70, 0, 4.5);
+    linea('Estudiante: ' + r.nombre + '   ·   Cédula: ' + soloDigitos(r.cedula) + ' (cédulas ' + grupoDe(r.cedula) + ')', 9.5, 'normal', 0, 0, 5);
+    linea('Aciertos: ' + r.aciertos + ' de ' + B.total
+      + (B.sin_nota ? '   ·   Lectura formativa, sin nota' : '   ·   Nota: ' + fmtNota(r.nota) + ' / ' + B.nota_maxima)
+      + '   ·   Generado el ' + new Date().toLocaleString('es-EC') + ' a partir del pase de avance', 9.5, 'normal', 0, 0, 5);
+    y += 2; doc.setDrawColor(0); doc.setLineWidth(0.3); doc.line(IZQ, y, IZQ + ANCHO, y); y += 6;
+    var sec = null;
+    r.detalle.forEach(function(d){
+      if (d.seccion !== sec) { sec = d.seccion; salto(14); y += 2; linea(sec, 8.5, 'bold', 90, 0, 5); }
+      salto(16);
+      var marca = d.elegida === null ? 'SIN RESPONDER' : d.acierto ? 'ACIERTO' : 'FALLO';
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
+      doc.setTextColor(d.elegida === null ? 120 : d.acierto ? 30 : 150, d.elegida === null ? 90 : d.acierto ? 110 : 30, d.elegida === null ? 0 : d.acierto ? 60 : 30);
+      doc.text(marca, IZQ, y);
+      linea(d.n + '. ' + d.enunciado, 9.5, 'bold', 0, 24, 4.6);
+      if (d.elegida !== null) linea('Respondió ' + letra(d.elegida) + ' ' + (d.opciones[d.elegida] || ''), 9, 'normal', 30, 24, 4.4);
+      if (!d.acierto && d.correcta !== null) linea('Correcta: ' + letra(d.correcta) + ' ' + d.opciones[d.correcta], 9, 'normal', 100, 24, 4.4);
+      y += 2.5;
+    });
+    doc.save('Detalle_' + r.bloque + '_' + soloDigitos(r.cedula) + '_'
+      + r.nombre.replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40) + '.pdf');
+  }
+
   /* ---------- pintar ---------- */
   function ficha(r, B, n){
     var div = document.createElement('section');
@@ -335,7 +423,8 @@ code{font-size:.8rem;overflow-wrap:anywhere}
       h += '<dl><dt>Cédula</dt><dd>' + esc(r.cedula) + ' (cédulas ' + grupoDe(r.cedula) + ')</dd>'
         + '<dt>Bloque</dt><dd>' + esc(B.membrete) + '</dd>'
         + '<dt>Aciertos</dt><dd>' + r.aciertos + ' de ' + B.total + '</dd>'
-        + '<dt>Nota</dt><dd><b>' + fmtNota(r.nota) + ' / ' + B.nota_maxima + '</b></dd>';
+        + '<dt>Nota</dt><dd>' + (B.sin_nota ? 'Lectura formativa, sin nota'
+            : '<b>' + fmtNota(r.nota) + ' / ' + B.nota_maxima + '</b>') + '</dd>';
       if (r.tipo === 'codigo') {
         h += '<dt>Emitida</dt><dd>' + esc(r.fecha) + '</dd>';
         if (r.intento) h += '<dt>Intento informado</dt><dd>' + esc(r.intento) + '</dd>';
@@ -352,12 +441,16 @@ code{font-size:.8rem;overflow-wrap:anywhere}
               return '<tr><td>' + (i + 1) + '</td><td>' + esc(s.pestana) + '</td><td>' + s.hechos + '/' + s.total
                 + '</td><td>' + s.aciertos + '</td></tr>';
             }).join('') + '</tbody></table></details>'
-          + '<div class="acciones"><button type="button" class="pdf">Descargar su constancia en PDF</button></div>';
+          + detalleHtml(r)
+          + '<div class="acciones"><button type="button" class="pdf">Descargar su constancia en PDF</button>'
+          + '<button type="button" class="sec pdf-det">Descargar el detalle de respuestas</button></div>';
       }
     }
     div.innerHTML = h;
     var b = div.querySelector('.pdf');
     if (b) b.addEventListener('click', function(){ pdf(r, B); });
+    var bd = div.querySelector('.pdf-det');
+    if (bd) bd.addEventListener('click', function(){ pdfDetalle(r, B); });
     return div;
   }
 
@@ -395,7 +488,7 @@ code{font-size:.8rem;overflow-wrap:anywhere}
           res.appendChild(ficha(r, B, t.n));
           filasCsv.push([r.nombre || '', r.cedula || '', bloque, r.tipo,
             r.invalido ? 'NO VALIDO' : (r.problemas.length ? 'CON OBSERVACIONES' : 'VALIDO'),
-            r.invalido ? '' : fmtNota(r.nota), r.invalido ? '' : r.aciertos,
+            (r.invalido || B.sin_nota) ? '' : fmtNota(r.nota), r.invalido ? '' : r.aciertos,
             (r.invalido ? [r.invalido] : r.problemas).join(' / ')]);
         }, function(e){
           var d = document.createElement('section'); d.className = 'ficha';
