@@ -743,7 +743,18 @@ h3{
     navegador, de modo que puede trabajar en varias sesiones; la constancia con su
     nota se emite cuando haya completado las 16 secciones.</p>
     <p class="fijada" id="identidad-fijada" hidden>Su identificación quedó fijada
-    con la primera respuesta. Si se equivocó, use «empezar de nuevo» al final.</p>
+    con la primera respuesta. Si se equivocó, use «empezar de nuevo» en el recuadro
+    «¿Perdió su avance, o necesita empezar de nuevo?», justo debajo.</p>
+    <details>
+      <summary>¿Perdió su avance, o necesita empezar de nuevo?</summary>
+      <label for="restaurar-avance">Pegue aquí su pase de avance, el texto que empieza por PASE</label>
+      <textarea id="restaurar-avance" placeholder="PASE|..." autocomplete="off"
+                autocapitalize="off" spellcheck="false"></textarea>
+      <span class="aviso-campo" id="aviso-restaurar" role="status"></span>
+      <div class="acciones-id">
+        <button type="button" id="reiniciar-control">Empezar de nuevo (borra mi avance en este navegador)</button>
+      </div>
+    </details>
   </div>
 </div>
 </section>
@@ -4482,12 +4493,24 @@ document.head.appendChild(css);
     // El respaldo se ofrece SIEMPRE, completa la tarea o no: el riesgo de
     // perder el avance no desaparece al terminar, y quien acaba de noche
     // puede querer guardarlo antes de generar el PDF al día siguiente.
-    var respaldoHtml = '<div class="acciones"><button type="button" class="respaldo">'
+    // El pase se muestra siempre en pantalla, ademas de copiarse con el boton:
+    // en los navegadores internos el portapapeles falla sin avisar, y asi la
+    // estudiante siempre puede seleccionarlo y mandarlo a mano.
+    var respaldoHtml = '<p class="instruccion"><b>Su pase de avance</b> (es un texto: si '
+      + 'no logra descargar el PDF, selecciónelo y envíeselo al docente):</p>'
+      + '<textarea readonly class="pase-visible" aria-label="Su pase de avance"></textarea>'
+      + '<div class="acciones"><button type="button" class="respaldo">'
       + 'Copiar mi pase de avance</button></div>'
       + '<p class="aun-no" id="pista-respaldo"></p>';
     function engancharRespaldo(){
       var br = caja.querySelector('.respaldo');
       if (br) br.addEventListener('click', function(){ copiarRespaldo(this); });
+      var pv = caja.querySelector('.pase-visible');
+      if (pv) {
+        pv.value = serializar();
+        pv.addEventListener('focus', function(){ pv.select(); });
+        pv.addEventListener('click', function(){ pv.select(); });
+      }
     }
 
     /* Completado: se cierra el intento, una sola vez por tanda de respuestas. */
@@ -4519,13 +4542,16 @@ document.head.appendChild(css);
             + 'descargarla ahora.</p>')
       + '<div class="acciones">'
       + '  <button type="button" class="descargar">Descargar mi constancia en PDF</button>'
+      + '  <button type="button" class="ver">Abrir el PDF en pantalla</button>'
       + '  <button type="button" class="imprimir">Imprimir o guardar como PDF</button>'
       + '  <button type="button" class="copiar">Copiar solo el código</button>'
       + '</div>'
       + '<p class="aun-no">Si el botón no descarga nada —ocurre en la aplicación de '
-      + 'Moodle y en el navegador interno de WhatsApp o Facebook—, abra esta página en '
-      + 'Chrome, Safari o Edge. Si al cambiar de navegador no ve su avance, pegue allí '
-      + 'su pase de avance en «Continuar en otro dispositivo».</p>'
+      + 'Moodle y en el navegador interno de WhatsApp o Facebook—, pruebe «Abrir el PDF '
+      + 'en pantalla» o abra esta página en Chrome, Safari o Edge. Si al cambiar de '
+      + 'navegador no ve su avance, pegue su pase en «¿Perdió su avance, o necesita '
+      + 'empezar de nuevo?», al principio del documento. <a href="../guia-constancia/" '
+      + 'target="_blank" rel="noopener">Guía con capturas, paso a paso</a>.</p>'
       + '<textarea readonly aria-label="Código de validación"></textarea>'
       + respaldoHtml;
     engancharRespaldo();
@@ -4540,6 +4566,7 @@ document.head.appendChild(css);
       setTimeout(function(){ b.textContent = 'Copiar solo el código'; }, 2000);
     });
     caja.querySelector('.descargar').addEventListener('click', function(){ descargarConstancia(r, this); });
+    caja.querySelector('.ver').addEventListener('click', function(){ verConstancia(r, this); });
     caja.querySelector('.imprimir').addEventListener('click', function(){ imprimirConstancia(r); });
 
     if (r.completo && INTENTOS > 1) pintarIntentos(caja, r);
@@ -4676,8 +4703,8 @@ document.head.appendChild(css);
     if (pista) {
       pista.innerHTML = 'Péguelo donde pueda recuperarlo: un mensaje a usted mismo, '
         + 'una nota del teléfono o el borrador de la tarea en el aula virtual. Si '
-        + 'continúa en otro equipo, péguelo en «Continuar en otro dispositivo», '
-        + 'al principio del documento.<br><code class="pase">' + texto + '</code>';
+        + 'continúa en otro equipo, ábralo en ese equipo y péguelo en «¿Perdió su '
+        + 'avance, o necesita empezar de nuevo?», al principio del documento.';
     }
     setTimeout(function(){ boton.textContent = 'Copiar mi pase de avance'; }, 2500);
   }
@@ -4703,33 +4730,70 @@ document.head.appendChild(css);
   }
 
   /* ---------- continuar en otro dispositivo ---------- */
-  var campoR = document.getElementById('restaurar-avance');
-  if (campoR) {
-    campoR.addEventListener('change', function(){
-      var v = campoR.value.trim();
-      var avisoR = document.getElementById('aviso-restaurar');
-      if (!v) return;
-      var st = deserializar(v);
-      if (!st) {
-        avisoR.textContent = 'Ese pase no se pudo leer. Cópielo entero, desde la '
-          + 'palabra PASE hasta el último carácter, sin espacios ni saltos de línea '
-          + 'en medio.';
-        return;
+  /* El pase llega pegado desde un mensaje, un correo o una nota del telefono, y
+     esos medios lo ensucian: parten la linea, cambian los espacios por
+     espacios duros, meten caracteres invisibles o lo rodean de texto. Se
+     extrae el pase del texto pegado en vez de exigir que llegue limpio. */
+  function extraerPase(texto){
+    var base = String(texto || '').replace(/[​-‍⁠﻿]/g, '');
+    // Un salto de linea puede ser un espacio que se partio o una palabra que se
+    // corto: no hay forma de saberlo, asi que se prueban las dos lecturas y
+    // queda la que valide con la firma del pase.
+    var lecturas = [
+      base.replace(/[\r\n]+/g, '').replace(/ /g, ' '),
+      base.replace(/[\r\n]+/g, ' ').replace(/ /g, ' '),
+      base.replace(/[\r\n ]+/g, '')
+    ];
+    var candidatos = [];
+    for (var i = 0; i < lecturas.length; i++) {
+      var t = lecturas[i].replace(/[ \t]+/g, ' ');
+      var m = t.match(/PASE\|[^|]+\|\d*\|[^|]*\|[-0-9]*\|\d+\|([0-9A-Za-z]+)/i);
+      if (!m) continue;
+      var cabeza = m[0].slice(0, m[0].length - m[1].length);
+      // El texto que sigue al pase (un «Gracias») puede quedar pegado a la firma.
+      for (var L = m[1].length; L >= 1; L--) {
+        candidatos.push((cabeza + m[1].slice(0, L)).toUpperCase());
       }
-      var tenia = Object.keys(estado.respuestas).length;
-      var trae = Object.keys(st.respuestas).length;
-      // Pegar un pase mas atrasado que lo ya registrado borraria trabajo hecho.
-      if (tenia > trae && !confirm('En este navegador ya hay ' + tenia + ' respuestas y '
-          + 'el pase trae ' + trae + '. Si continúa, se quedará con las del pase y '
-          + 'perderá las otras. ¿Continuar?')) { campoR.value = ''; return; }
-      estado = st; guardar();
-      if (campoN) campoN.value = estado.nombre || '';
-      if (campoC) campoC.value = estado.cedula || '';
-      revisarCedula(); pintarTodo();
-      avisoR.textContent = 'Avance recuperado: ' + trae + ' respuestas de '
-        + TOTAL_AP + '. Puede seguir donde lo dejó.';
-      campoR.value = '';
+    }
+    return candidatos;
+  }
+
+  var campoR = document.getElementById('restaurar-avance');
+  var avisoR = document.getElementById('aviso-restaurar');
+  function restaurarDesdeCampo(avisarSiFalla){
+    if (!campoR || !avisoR) return;
+    var crudo = campoR.value;
+    if (!crudo.trim()) return;
+    var st = null, cands = extraerPase(crudo);
+    for (var k = 0; k < cands.length && !st; k++) st = deserializar(cands[k]);
+    if (!st) {
+      if (avisarSiFalla) avisoR.textContent = 'Ese pase no se pudo leer. Copie el '
+        + 'mensaje completo, desde la palabra PASE hasta el último carácter. Si '
+        + 'lo copió de un chat y se cortó, vuelva a copiarlo entero.';
+      return;
+    }
+    var tenia = Object.keys(estado.respuestas).length;
+    var trae = Object.keys(st.respuestas).length;
+    // Pegar un pase mas atrasado que lo ya registrado borraria trabajo hecho.
+    if (tenia > trae && !confirm('En este navegador ya hay ' + tenia + ' respuestas y '
+        + 'el pase trae ' + trae + '. Si continúa, se quedará con las del pase y '
+        + 'perderá las otras. ¿Continuar?')) { campoR.value = ''; return; }
+    estado = st; guardar();
+    if (campoN) campoN.value = estado.nombre || '';
+    if (campoC) campoC.value = estado.cedula || '';
+    revisarCedula(); pintarTodo();
+    avisoR.textContent = 'Avance recuperado: ' + trae + ' respuestas de '
+      + TOTAL_AP + '. Puede seguir donde lo dejó.';
+    campoR.value = '';
+  }
+  if (campoR) {
+    // Al pegar o escribir se intenta restaurar en silencio: en el movil el
+    // evento «change» solo llega al salir del campo, y nadie sabe que debe salir.
+    campoR.addEventListener('input', function(){ restaurarDesdeCampo(false); });
+    campoR.addEventListener('paste', function(){
+      setTimeout(function(){ restaurarDesdeCampo(true); }, 0);
     });
+    campoR.addEventListener('change', function(){ restaurarDesdeCampo(true); });
   }
 
   /* ---------- aviso al cerrar una seccion ----------
@@ -4828,14 +4892,9 @@ document.head.appendChild(css);
      window.print() y el boton no hacia nada; Chrome en Android no espera al
      dialogo y la pagina se restauraba antes de que la vista previa la leyera.
      Aqui el PDF se escribe directamente, como texto, y se descarga. */
-  function descargarConstancia(r, boton){
+  function construirPdf(r){
     var J = window.jspdf && window.jspdf.jsPDF;
-    if (!J) {
-      alert('No se pudo cargar el generador de PDF; revise su conexión a internet. '
-          + 'Se abrirá el diálogo de impresión: elija «Guardar como PDF».');
-      imprimirConstancia(r);
-      return;
-    }
+    if (!J) return null;
     var c = contenidoConstancia(r);
     var doc = new J({ unit: 'mm', format: 'a4', orientation: 'portrait' });
     var IZQ = 20, DER = 190, ANCHO = DER - IZQ, y = 22;
@@ -4919,8 +4978,19 @@ document.head.appendChild(css);
     var nombre = 'Constancia_' + BANCO.bloque + '_' + soloDigitos(estado.cedula) + '_'
       + normNombre(estado.nombre).replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40)
       + '.pdf';
+    return { doc: doc, nombre: nombre };
+  }
+
+  function descargarConstancia(r, boton){
+    var pdf = construirPdf(r);
+    if (!pdf) {
+      alert('No se pudo cargar el generador de PDF; revise su conexión a internet. '
+          + 'Se abrirá el diálogo de impresión: elija «Guardar como PDF».');
+      imprimirConstancia(r);
+      return;
+    }
     try {
-      doc.save(nombre);
+      pdf.doc.save(pdf.nombre);
       if (boton) {
         boton.textContent = 'PDF descargado';
         setTimeout(function(){ boton.textContent = 'Descargar mi constancia en PDF'; }, 2500);
@@ -4929,6 +4999,31 @@ document.head.appendChild(css);
       alert('Este navegador no permitió descargar el archivo. Se abrirá el diálogo de '
           + 'impresión: elija «Guardar como PDF».');
       imprimirConstancia(r);
+    }
+  }
+
+  /* Camino para quien no logra descargar (navegador interno de Moodle o
+     WhatsApp): el PDF se abre en una pestana y desde ahi se guarda o se
+     comparte con el boton del propio visor. Si la pestana nueva se bloquea,
+     se abre en la misma. */
+  function verConstancia(r, boton){
+    var pdf = construirPdf(r);
+    if (!pdf) {
+      alert('No se pudo cargar el generador de PDF; revise su conexión a internet. '
+          + 'Mientras tanto, copie su pase de avance y envíeselo al docente.');
+      return;
+    }
+    try {
+      var url = URL.createObjectURL(pdf.doc.output('blob'));
+      var w = window.open(url, '_blank');
+      if (!w) window.location.href = url;
+      if (boton) {
+        boton.textContent = 'PDF abierto';
+        setTimeout(function(){ boton.textContent = 'Abrir el PDF en pantalla'; }, 2500);
+      }
+    } catch (err) {
+      alert('Este navegador tampoco permitió abrir el archivo. Copie su pase de '
+          + 'avance (más abajo) y envíeselo al docente: con eso se verifica su nota.');
     }
   }
 
