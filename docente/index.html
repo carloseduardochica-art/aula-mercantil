@@ -84,7 +84,9 @@ code{font-size:.8rem;overflow-wrap:anywhere}
 
 <script>
 (function(){
+  /* Lo unico que cambia de un aula a otra: de que paginas sale cada bloque. */
   var FUENTES = { M1: '../autocontrol-b1/', M2: '../autocontrol-b2/' };
+  var CLAVES = Object.keys(FUENTES).join('|');
   var bancos = {};               // bloque -> promesa del banco
   var filasCsv = [];
 
@@ -362,7 +364,8 @@ code{font-size:.8rem;overflow-wrap:anywhere}
   /* Del texto pegado se toma desde donde empieza el pase o el codigo hasta el
      final de la linea: asi sirve pegar «Marisol: PASE|M1|...» tal cual llega. */
   function extraer(linea){
-    var m = linea.match(/PASE\|M\d\|.*$/) || linea.match(/\bM\d\|\d{6,}\|.*$/);
+    var m = linea.match(new RegExp('PASE\\|(' + CLAVES + ')\\|.*$'))
+         || linea.match(new RegExp('\\b(' + CLAVES + ')\\|\\d{6,}\\|.*$'));
     return m ? m[0].trim() : null;
   }
 
@@ -378,7 +381,8 @@ code{font-size:.8rem;overflow-wrap:anywhere}
       tareas.push({ n: i + 1, texto: t });
     });
     if (!tareas.length) {
-      msg.textContent = 'No encontré ningún pase ni código. Un pase empieza por PASE|M1| y un código por M1| o M2|.';
+      msg.textContent = 'No encontré ningún pase ni código. Un pase empieza por PASE| y un código por '
+        + Object.keys(FUENTES).join('|, ') + '|.';
       return;
     }
     msg.textContent = 'Leyendo el banco de preguntas…';
