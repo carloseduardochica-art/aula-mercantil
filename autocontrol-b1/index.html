@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Derecho Mercantil y Societario · Bloque 1</title>
+<!-- Genera la constancia como archivo PDF de verdad, sin pasar por el dialogo
+     de impresion. Es la misma biblioteca que usan los foros y el Caso Harvard. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>:root{
   --papel:#f6f6f4;
   --papel-alt:#ececea;
@@ -5947,7 +5950,8 @@ document.head.appendChild(css);
 
   function codigo(r){
     var ampliado = INTENTOS > 1 || !!CIERRE;
-    var rep = (ampliado && mejor()) ? mejor() : {
+    var deIntento = ampliado && !!mejor();
+    var rep = deIntento ? mejor() : {
       nota: r.nota, aciertos: r.aciertos, minutos: minutos(),
       fecha: selloLocal(), fuera: fueraDePlazo()
     };
@@ -5955,7 +5959,7 @@ document.head.appendChild(css);
       BANCO.muestra ? 'MUESTRA' : BANCO.bloque,
       soloDigitos(estado.cedula),
       normNombre(estado.nombre),
-      r.hechos + '/' + TOTAL_AP,
+      (deIntento ? TOTAL_AP : r.hechos) + '/' + TOTAL_AP,
       (ampliado ? rep.aciertos : r.aciertos) + 'A',
       (ampliado ? rep.nota : r.nota).toFixed(2) + 'N',
       (ampliado ? rep.minutos : minutos()) + 'M'
@@ -5987,7 +5991,16 @@ document.head.appendChild(css);
       var br = caja.querySelector('.respaldo');
       if (br) br.addEventListener('click', function(){ copiarRespaldo(this); });
     }
-    if (!r.completo) {
+
+    /* Completado: se cierra el intento, una sola vez por tanda de respuestas. */
+    if (r.completo && INTENTOS > 1) cerrarIntento(r);
+
+    /* Empezar otro intento no puede dejar al estudiante sin constancia. Antes,
+       quien pulsaba «Empezar el intento 2» perdia el boton del PDF hasta volver
+       a responder todos los apartados, aunque la nota informada fuera la del
+       intento ya cerrado. */
+    var vigente = !r.completo && INTENTOS > 1 && !!mejor();
+    if (!r.completo && !vigente) {
       var faltan = TOTAL_AP - r.hechos;
       caja.innerHTML = '<p class="aun-no">Su avance queda guardado en este navegador; '
         + 'puede continuar otro día. La constancia con su nota se emite cuando haya '
@@ -5997,17 +6010,24 @@ document.head.appendChild(css);
       return;
     }
 
-    /* Completado: se cierra el intento, una sola vez por tanda de respuestas. */
-    if (INTENTOS > 1) cerrarIntento(r);
-
     caja.innerHTML =
-        '<p class="instruccion">Ha completado la lectura. Pulse el botón para generar '
-      + 'su constancia y, en el diálogo de impresión, elija <b>«Guardar como PDF»</b>. '
-      + 'Ese archivo es el que debe subir a la tarea del aula virtual.</p>'
+        (r.completo
+          ? '<p class="instruccion">Ha completado la lectura. Pulse el botón para '
+            + 'descargar su constancia en PDF. Ese archivo es el que debe subir a la '
+            + 'tarea del aula virtual.</p>'
+          : '<p class="instruccion">Está en el intento ' + (cerrados().length + 1)
+            + ' y lleva ' + r.hechos + ' de ' + TOTAL_AP + ' apartados. Mientras no lo '
+            + 'termine, su constancia es la de su mejor intento cerrado, y puede '
+            + 'descargarla ahora.</p>')
       + '<div class="acciones">'
-      + '  <button type="button" class="imprimir">Generar mi constancia en PDF</button>'
+      + '  <button type="button" class="descargar">Descargar mi constancia en PDF</button>'
+      + '  <button type="button" class="imprimir">Imprimir o guardar como PDF</button>'
       + '  <button type="button" class="copiar">Copiar solo el código</button>'
       + '</div>'
+      + '<p class="aun-no">Si el botón no descarga nada —ocurre en la aplicación de '
+      + 'Moodle y en el navegador interno de WhatsApp o Facebook—, abra esta página en '
+      + 'Chrome, Safari o Edge. Si al cambiar de navegador no ve su avance, pegue allí '
+      + 'su pase de avance en «Continuar en otro dispositivo».</p>'
       + '<textarea readonly aria-label="Código de validación"></textarea>'
       + respaldoHtml;
     engancharRespaldo();
@@ -6021,17 +6041,32 @@ document.head.appendChild(css);
       var b = this; b.textContent = 'Copiado';
       setTimeout(function(){ b.textContent = 'Copiar solo el código'; }, 2000);
     });
+    caja.querySelector('.descargar').addEventListener('click', function(){ descargarConstancia(r, this); });
     caja.querySelector('.imprimir').addEventListener('click', function(){ imprimirConstancia(r); });
 
-    if (INTENTOS > 1) pintarIntentos(caja, r);
+    if (r.completo && INTENTOS > 1) pintarIntentos(caja, r);
   }
 
   /* ---------- cierre de intento y repeticion ---------- */
+  function desglose(r){
+    return r.por.map(function(s){
+      return { pestana: s.pestana, total: s.total, aciertos: s.aciertos, puntos: s.puntos };
+    });
+  }
   function cerrarIntento(r){
-    if (estado.cerrado) return;
+    if (estado.cerrado) {
+      /* Los intentos cerrados antes de guardar el desglose no lo traen. Si la
+         tanda en pantalla es la de ese intento, se completa con ella. */
+      var u = cerrados()[cerrados().length - 1];
+      if (u && !u.por && u.aciertos === r.aciertos) {
+        u.por = desglose(r); u.bruto = r.bruto; guardar();
+      }
+      return;
+    }
     estado.intentos = cerrados().concat([{
       nota: r.nota, aciertos: r.aciertos, minutos: minutos(),
-      fecha: selloLocal(), fuera: fueraDePlazo()
+      fecha: selloLocal(), fuera: fueraDePlazo(),
+      por: desglose(r), bruto: r.bruto
     }]);
     estado.cerrado = true;
     guardar();
@@ -6224,18 +6259,174 @@ document.head.appendChild(css);
     }
   }
 
-  /* ---------- constancia imprimible ---------- */
+  /* ---------- contenido de la constancia ----------
+     Con intentos o con plazo, el codigo informa el MEJOR intento cerrado. La
+     hoja tiene que decir lo mismo que el codigo: antes pintaba las respuestas
+     en pantalla, y con un segundo intento peor, o a medias, se contradecian.
+     El PDF descargado y la hoja imprimible salen los dos de aqui. */
+  function contenidoConstancia(r){
+    var m = (INTENTOS > 1 || !!CIERRE) ? mejor() : null;
+    var d = m
+      ? { nota: m.nota, aciertos: m.aciertos, minutos: m.minutos, por: m.por || null,
+          bruto: (typeof m.bruto === 'number') ? m.bruto : null, fuera: !!m.fuera }
+      : { nota: r.nota, aciertos: r.aciertos, minutos: minutos(), por: r.por,
+          bruto: r.bruto, fuera: fueraDePlazo() };
+    var ahora = new Date();
+    var datos = [
+      ['Estudiante', normNombre(estado.nombre)],
+      ['Cédula', soloDigitos(estado.cedula) + '  (cuestionario de cédulas ' + grupoDe(estado.cedula) + ')'],
+      ['Emitida', ahora.toLocaleDateString('es-EC') + ' a las ' + ahora.toLocaleTimeString('es-EC')],
+      ['Tiempo de trabajo', d.minutos + ' minutos repartidos en una o varias sesiones']
+    ];
+    if (INTENTOS > 1) {
+      var hist = cerrados(), cual = 1;
+      for (var i = 0; i < hist.length; i++) if (hist[i] === m) cual = i + 1;
+      datos.push(['Intento informado', hist.length > 1
+        ? 'El ' + cual + '.º, el mejor de ' + hist.length + ' (se permiten ' + INTENTOS + ')'
+        : 'El 1.º (se permiten ' + INTENTOS + ')']);
+    }
+    if (CIERRE) {
+      datos.push(['Plazo', (d.fuera ? 'FUERA DE PLAZO' : 'Dentro del plazo')
+        + ' (cierre ' + CIERRE + ', hora de Ecuador)']);
+    }
+    var filas = [];
+    if (d.por) for (var k = 0; k < d.por.length; k++) {
+      var s = d.por[k];
+      filas.push([String(k + 1), s.pestana, s.aciertos + ' / ' + s.total, s.puntos.toFixed(2)]);
+    }
+    return {
+      datos: datos, filas: filas,
+      total: ['Total', d.aciertos + ' / ' + TOTAL_AP, d.bruto === null ? '' : d.bruto.toFixed(2)],
+      nota: fmtNota(d.nota) + ' / ' + TOPE,
+      topada: (d.bruto !== null && d.bruto > TOPE)
+        ? '(' + d.bruto.toFixed(2) + ' puntos brutos, topados en ' + TOPE + ')' : '',
+      codigo: codigo(r)
+    };
+  }
+
+  /* ---------- constancia en PDF ----------
+     La constancia salia solo por el dialogo de impresion, y ese camino falla
+     justo donde mas estudiantes la piden: en el telefono. La aplicacion de
+     Moodle y los navegadores internos de WhatsApp o Facebook ignoran
+     window.print() y el boton no hacia nada; Chrome en Android no espera al
+     dialogo y la pagina se restauraba antes de que la vista previa la leyera.
+     Aqui el PDF se escribe directamente, como texto, y se descarga. */
+  function descargarConstancia(r, boton){
+    var J = window.jspdf && window.jspdf.jsPDF;
+    if (!J) {
+      alert('No se pudo cargar el generador de PDF; revise su conexión a internet. '
+          + 'Se abrirá el diálogo de impresión: elija «Guardar como PDF».');
+      imprimirConstancia(r);
+      return;
+    }
+    var c = contenidoConstancia(r);
+    var doc = new J({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    var IZQ = 20, DER = 190, ANCHO = DER - IZQ, y = 22;
+    function salto(h){ if (y + h > 282) { doc.addPage(); y = 20; } }
+    function parrafo(texto, tam, estilo, color, alto){
+      doc.setFont('helvetica', estilo); doc.setFontSize(tam); doc.setTextColor(color);
+      var ls = doc.splitTextToSize(texto, ANCHO);
+      for (var i = 0; i < ls.length; i++) { salto(alto); doc.text(ls[i], IZQ, y); y += alto; }
+    }
+
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(90);
+    doc.text(BANCO.institucion.toUpperCase(), 105, y, { align: 'center' }); y += 10;
+    doc.setFont('times', 'bold'); doc.setFontSize(21); doc.setTextColor(0);
+    doc.text('Constancia de lectura', 105, y, { align: 'center' }); y += 7;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(70);
+    var sub = doc.splitTextToSize(BANCO.titulo + ' · ' + BANCO.membrete, ANCHO);
+    for (var a = 0; a < sub.length; a++) { doc.text(sub[a], 105, y, { align: 'center' }); y += 4.5; }
+    doc.text('Actividad autónoma — control de lectura del bloque', 105, y, { align: 'center' });
+    y += 4; doc.setDrawColor(0); doc.setLineWidth(0.4); doc.line(IZQ, y, DER, y); y += 8;
+
+    for (var b = 0; b < c.datos.length; b++) {
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(90);
+      doc.text(c.datos[b][0], IZQ, y);
+      doc.setTextColor(0);
+      var v = doc.splitTextToSize(c.datos[b][1], ANCHO - 42);
+      for (var e = 0; e < v.length; e++) { doc.text(v[e], IZQ + 42, y); y += 5; }
+      y += 1;
+    }
+    y += 4;
+
+    var COL = [IZQ, IZQ + 10, IZQ + 128, IZQ + 152];
+    function fila(celdas, negrita, fondo){
+      salto(7);
+      if (fondo) { doc.setFillColor(fondo); doc.rect(IZQ, y - 4, ANCHO, 5.6, 'F'); }
+      doc.setFont('helvetica', negrita ? 'bold' : 'normal'); doc.setFontSize(9.5); doc.setTextColor(0);
+      for (var i = 0; i < celdas.length; i++) {
+        var t = doc.splitTextToSize(celdas[i], (COL[i + 1] || DER) - COL[i] - 2)[0] || '';
+        doc.text(t, COL[i] + 1, y);
+      }
+      doc.setDrawColor(190); doc.setLineWidth(0.2); doc.line(IZQ, y + 1.6, DER, y + 1.6);
+      y += 5.6;
+    }
+    if (c.filas.length) {
+      fila(['#', 'Sección', 'Aciertos', 'Puntos'], true, 235);
+      for (var f = 0; f < c.filas.length; f++) fila(c.filas[f], false, null);
+      fila(['', c.total[0], c.total[1], c.total[2]], true, 246);
+    } else {
+      parrafo('Aciertos: ' + c.total[1] + '. El desglose por sección no se conservó '
+        + 'para este intento.', 9.5, 'normal', 0, 5);
+    }
+
+    y += 6; salto(20);
+    doc.setDrawColor(0); doc.setLineWidth(0.6); doc.rect(IZQ + 30, y - 6, ANCHO - 60, c.topada ? 18 : 13);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(14); doc.setTextColor(0);
+    doc.text('Nota final  ' + c.nota, 105, y + 2.5, { align: 'center' });
+    if (c.topada) {
+      doc.setFontSize(9); doc.setTextColor(90);
+      doc.text(c.topada, 105, y + 8.5, { align: 'center' });
+    }
+    y += c.topada ? 20 : 15;
+
+    parrafo('Código de validación', 9.5, 'normal', 60, 5);
+    doc.setFont('courier', 'normal'); doc.setFontSize(9.5); doc.setTextColor(0);
+    var cod = doc.splitTextToSize(c.codigo, ANCHO - 6);
+    salto(cod.length * 4.6 + 6);
+    doc.setDrawColor(140); doc.setLineWidth(0.3);
+    doc.setLineDashPattern([1.2, 1], 0);
+    doc.rect(IZQ, y - 3, ANCHO, cod.length * 4.6 + 3.5);
+    doc.setLineDashPattern([], 0);
+    for (var g = 0; g < cod.length; g++) { doc.text(cod[g], IZQ + 3, y + 1.5); y += 4.6; }
+    y += 8;
+
+    doc.setDrawColor(200); doc.setLineWidth(0.2); salto(12); doc.line(IZQ, y - 4, DER, y - 4);
+    parrafo('Este documento lo genera el propio material de lectura. El código de validación '
+      + 'permite al docente comprobar que los datos no han sido alterados.', 8.5, 'normal', 90, 4.2);
+
+    var nombre = 'Constancia_' + BANCO.bloque + '_' + soloDigitos(estado.cedula) + '_'
+      + normNombre(estado.nombre).replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40)
+      + '.pdf';
+    try {
+      doc.save(nombre);
+      if (boton) {
+        boton.textContent = 'PDF descargado';
+        setTimeout(function(){ boton.textContent = 'Descargar mi constancia en PDF'; }, 2500);
+      }
+    } catch (err) {
+      alert('Este navegador no permitió descargar el archivo. Se abrirá el diálogo de '
+          + 'impresión: elija «Guardar como PDF».');
+      imprimirConstancia(r);
+    }
+  }
+
+  /* ---------- constancia imprimible ----------
+     Queda como segundo camino, para quien prefiera el dialogo del sistema. */
+  function celdas(fila, etiqueta){
+    var h = '';
+    for (var i = 0; i < fila.length; i++) h += '<' + etiqueta + '>' + fila[i] + '</' + etiqueta + '>';
+    return '<tr>' + h + '</tr>';
+  }
   function imprimirConstancia(r){
     var hoja = document.getElementById('hoja-constancia');
     if (!hoja) return;
-    var ahora = new Date();
-    var filas = '';
-    for (var i = 0; i < r.por.length; i++) {
-      var s = r.por[i];
-      filas += '<tr><td>' + (i + 1) + '</td><td>' + s.pestana + '</td>'
-        + '<td>' + s.aciertos + ' / ' + s.total + '</td>'
-        + '<td>' + s.puntos.toFixed(2) + '</td></tr>';
+    var c = contenidoConstancia(r);
+    var datos = '', filas = '';
+    for (var i = 0; i < c.datos.length; i++) {
+      datos += '<tr><th>' + c.datos[i][0] + '</th><td>' + c.datos[i][1] + '</td></tr>';
     }
+    for (var k = 0; k < c.filas.length; k++) filas += celdas(c.filas[k], 'td');
     hoja.innerHTML =
         '<div class="cons-carat">'
       + '  <p class="cons-inst">' + BANCO.institucion + '</p>'
@@ -6243,25 +6434,25 @@ document.head.appendChild(css);
       + '  <p class="cons-sub">' + BANCO.titulo + ' · ' + BANCO.membrete + '</p>'
       + '  <p class="cons-sub">Actividad autónoma — control de lectura del bloque</p>'
       + '</div>'
-      + '<table class="cons-datos"><tbody>'
-      + '<tr><th>Estudiante</th><td>' + normNombre(estado.nombre) + '</td></tr>'
-      + '<tr><th>Cédula</th><td>' + soloDigitos(estado.cedula)
-      + ' <span class="cons-grupo">(cuestionario de cédulas ' + grupoDe(estado.cedula) + ')</span></td></tr>'
-      + '<tr><th>Emitida</th><td>' + ahora.toLocaleDateString('es-EC')
-      + ' a las ' + ahora.toLocaleTimeString('es-EC') + '</td></tr>'
-      + '<tr><th>Tiempo de trabajo</th><td>' + minutos() + ' minutos repartidos en una o varias sesiones</td></tr>'
-      + '</tbody></table>'
-      + '<table class="cons-tabla"><thead><tr><th>#</th><th>Sección</th>'
-      + '<th>Aciertos</th><th>Puntos</th></tr></thead><tbody>' + filas + '</tbody>'
-      + '<tfoot><tr><th colspan="2">Total</th><th>' + r.aciertos + ' / ' + TOTAL_AP + '</th>'
-      + '<th>' + r.bruto.toFixed(2) + '</th></tr></tfoot></table>'
-      + '<p class="cons-nota">Nota final <b>' + fmtNota(r.nota) + ' / ' + TOPE + '</b>'
-      + (r.bruto > TOPE ? ' <span class="cons-grupo">(' + r.bruto.toFixed(2)
-          + ' puntos brutos, topados en ' + TOPE + ')</span>' : '') + '</p>'
-      + '<p class="cons-cod">Código de validación<br><code>' + codigo(r) + '</code></p>'
+      + '<table class="cons-datos"><tbody>' + datos + '</tbody></table>'
+      + (c.filas.length
+          ? '<table class="cons-tabla"><thead><tr><th>#</th><th>Sección</th>'
+            + '<th>Aciertos</th><th>Puntos</th></tr></thead><tbody>' + filas + '</tbody>'
+            + '<tfoot><tr><th colspan="2">' + c.total[0] + '</th><th>' + c.total[1]
+            + '</th><th>' + c.total[2] + '</th></tr></tfoot></table>'
+          : '<p>Aciertos: ' + c.total[1] + '. El desglose por sección no se conservó '
+            + 'para este intento.</p>')
+      + '<p class="cons-nota">Nota final <b>' + c.nota + '</b>'
+      + (c.topada ? ' <span class="cons-grupo">' + c.topada + '</span>' : '') + '</p>'
+      + '<p class="cons-cod">Código de validación<br><code>' + c.codigo + '</code></p>'
       + '<p class="cons-pie">Este documento lo genera el propio material de lectura. '
       + 'El código de validación permite al docente comprobar que los datos no han sido '
       + 'alterados.</p>';
+    /* La clase se retira SOLO al cerrar el dialogo. Antes se retiraba tambien a
+       los 1,5 s por si acaso, pero en Android window.print() no espera: la
+       vista previa llegaba tarde y leia el periodico entero, o una hoja en
+       blanco. Mientras la clase esta puesta la pantalla no cambia: solo afecta
+       a la impresion. */
     document.body.classList.add('imprimiendo-constancia');
     var limpiar = function(){
       document.body.classList.remove('imprimiendo-constancia');
@@ -6270,7 +6461,6 @@ document.head.appendChild(css);
     window.addEventListener('afterprint', limpiar);
     setTimeout(function(){
       try { window.print(); } catch (e) {}
-      setTimeout(limpiar, 1500);
     }, 60);
   }
 
