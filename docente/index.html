@@ -56,6 +56,14 @@ code{font-size:.8rem;overflow-wrap:anywhere}
 .seccion-det{margin:.8em 0 .2em;font-size:.8rem;letter-spacing:.05em;text-transform:uppercase;color:var(--suave)}
 .mensaje{color:var(--suave);margin-top:14px}
 .limite{font-size:.85rem;color:var(--suave);margin-top:28px;border-top:1px solid var(--linea);padding-top:12px}
+.fichas{margin-top:26px}
+.fichas>h2{font-family:Georgia,"Times New Roman",serif;font-size:1.35rem;margin:0 0 .2em}
+.fichas>p{color:var(--suave);font-size:.92rem;margin:.2em 0 .6em}
+.ficha-est h3{font-size:1.05rem;margin:.1em 0 .4em}
+.ficha-est ol{padding-left:1.3em;margin:.4em 0}
+.ficha-est ol li{margin:.45em 0}
+.ficha-est .base{display:block;color:var(--suave);font-size:.85rem}
+.ia-salida{white-space:pre-wrap;background:var(--fondo);border:1px solid var(--linea);border-radius:8px;padding:10px;font-size:.92rem}
 @media (max-width:560px){ dl{grid-template-columns:1fr} dt{margin-top:.4em} }
 </style>
 </head>
@@ -68,7 +76,9 @@ code{font-size:.8rem;overflow-wrap:anywhere}
     <p>Pegue aquí, uno por línea, los <b>pases de avance</b> (empiezan por <code>PASE|M1|</code>)
       o los <b>códigos de validación</b> de las constancias (empiezan por <code>M1|</code> o
       <code>M2|</code>). Del <b>Caso Harvard</b>, el respaldo (<code>PASEH|</code>) y el código del acta
-      (<code>CH|</code>). Puede pegarlos con texto alrededor, por ejemplo copiados de un mensaje.</p>
+      (<code>CH|</code>). De los <b>foros</b>, el código del acta (<code>AD1|</code>, <code>AD2|</code>).
+      Puede pegar todo lo de un paralelo junto: la página arma una <b>ficha de sustentación por
+      estudiante</b> con preguntas que salen de su propio trabajo. Puede pegarlos con texto alrededor, por ejemplo copiados de un mensaje.</p>
     <textarea id="entrada" spellcheck="false" aria-label="Pases o códigos, uno por línea"></textarea>
     <div class="acciones">
       <button type="button" id="revisar">Revisar</button>
@@ -79,6 +89,7 @@ code{font-size:.8rem;overflow-wrap:anywhere}
 
   <p class="mensaje" id="mensaje" role="status"></p>
   <div id="resultados"></div>
+  <section class="fichas" id="fichas" hidden></section>
 
   <p class="limite"><b>Qué hace cada cosa.</b> Con un <b>pase</b>, la página recalcula la nota
     a partir de las respuestas, igual que el autocontrol, muestra pregunta por pregunta qué
@@ -91,7 +102,10 @@ code{font-size:.8rem;overflow-wrap:anywhere}
     pase y recalcúlela. Del <b>Caso Harvard</b>, la página no califica el acta: verifica su código (firma, variante y
     control registral) y, con el respaldo, muestra el texto completo. Si pega el respaldo y el código
     del mismo estudiante, compara la huella del texto para saber si el acta entregada es la misma.
-    Esta página no guarda ni envía nada; todo ocurre en este navegador.</p>
+    Las <b>fichas de sustentación</b> juntan todo lo de un mismo estudiante (por su cédula) y proponen
+    preguntas a partir de sus fallos, de lo que dejó sin desarrollar y de lo que él mismo afirmó. Si pulsa
+    «Afinar las preguntas con IA», su trabajo se envía —sin nombre ni cédula— al servicio de IA de los
+    foros del aula. Fuera de eso, esta página no guarda ni envía nada.</p>
 </main>
 
 <script>
@@ -102,6 +116,13 @@ code{font-size:.8rem;overflow-wrap:anywhere}
   /* El Caso Harvard tiene su propio respaldo (PASEH|) y su propio codigo (CH|).
      null en un aula que no lo tiene. */
   var CASO = '../caso-harvard/';
+  /* Otras tareas con codigo firmado: prefijo del codigo -> [pagina, nombre].
+     La sal se lee de cada pagina publicada. */
+  var OTROS = { AD1: ['../foro-b1/', 'Foro socrático · Bloque 1'],
+                AD2: ['../foro-b2/', 'Foro socrático · Bloque 2'] };
+  /* El mismo Worker de los foros: guarda la clave de la IA y solo responde a
+     paginas de este dominio. */
+  var WORKER_URL = 'https://aula-mercantil-ia.carloseduardochica.workers.dev';
   var casoCargado = null;
   var bancos = {};               // bloque -> promesa del banco
   var filasCsv = [];
@@ -600,6 +621,350 @@ code{font-size:.8rem;overflow-wrap:anywhere}
     doc.save('Acta_texto_Caso_Harvard_' + r.cedula + '_docente.pdf');
   }
 
+  /* ---------- otras tareas: foros y hojas del ABP ---------- */
+  var otrosCache = {};
+  function cargarOtro(pref){
+    if (!otrosCache[pref]) {
+      otrosCache[pref] = fetch(OTROS[pref][0], { cache: 'no-cache' })
+        .then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+        .then(function(html){
+          var s = html.match(/\bSAL\s*=\s*["']([^"']+)["']/);
+          var c = html.match(/\bCLAVE\s*=\s*["']([^"']+)["']/);
+          if (!s) throw new Error('No se pudo leer la firma de ' + OTROS[pref][1] + '.');
+          return { pref: pref, sal: s[1], clave: c ? c[1] : null, nombre: OTROS[pref][1] };
+        });
+      otrosCache[pref].catch(function(){ delete otrosCache[pref]; });
+    }
+    return otrosCache[pref];
+  }
+
+  /* Los campos de cada formato se reconocen por su forma, no por su posicion:
+     asi un mismo lector sirve a foros, hojas, avance e informe. */
+  function rotularCampo(v){
+    if (/^\d+\/\d+$/.test(v)) return ['Completado', v];
+    if (/^\d+(\.\d+)?N$/.test(v)) return ['Nota sugerida', fmtNota(parseFloat(v))];
+    if (/^\d+M$/.test(v)) return ['Tiempo de trabajo', parseInt(v, 10) + ' minutos'];
+    if (/^\d+A$/.test(v)) return ['Rondas completadas', parseInt(v, 10)];
+    if (/^\d+\/\d+I$/.test(v)) return ['Intento', v.replace('I', '')];
+    if (v === 'EP') return ['Plazo', 'Dentro del plazo'];
+    if (v === 'FP') return ['Plazo', 'FUERA DE PLAZO'];
+    if (/^G[AB]$/.test(v)) return ['Grupo', v.slice(1)];
+    if (/^A\d+(\.\d+)?$/.test(v)) return ['Autoevaluación', v.slice(1)];
+    if (/^A-$/.test(v)) return ['Autoevaluación', 'sin hacer'];
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(v)) return ['Emitido', v];
+    return ['Dato', v];
+  }
+  function leerCodigoOtro(texto, O){
+    var p = texto.split('|');
+    var r = { tipo: 'codigo', texto: texto, problemas: [], tarea: O.nombre, nombre: p[2], cedula: p[1] };
+    if (p.length < 5) { r.invalido = 'El código está cortado o incompleto.'; return r; }
+    if (b36(djb2(O.sal + p.slice(0, -1).join('|'))) !== p[p.length - 1]) {
+      r.invalido = 'La firma no corresponde a los datos: el código fue modificado o copiado con errores.'; return r;
+    }
+    r.campos = p.slice(3, -1).map(rotularCampo);
+    r.campos.forEach(function(c){
+      if (c[0] === 'Nota sugerida') r.nota = parseFloat(c[1]);
+      if (c[0] === 'Completado') r.completado = c[1];
+      if (c[1] === 'FUERA DE PLAZO') r.problemas.push('Marcado FUERA DE PLAZO por el reloj del aparato del estudiante.');
+    });
+    if (!cedulaValida(r.cedula)) r.problemas.push('La cédula no supera el dígito verificador.');
+    return r;
+  }
+  function leerPaseHoja(texto){
+    var m = texto.match(/^PASEF\|([^|]+)\|([A-Za-z0-9+\/=]+)\|([0-9A-Z]+)$/);
+    var r = { tipo: 'respaldo', texto: texto, problemas: [] };
+    if (!m) { r.invalido = 'El respaldo está cortado.'; return Promise.resolve(r); }
+    return Promise.all(Object.keys(OTROS).map(function(k){ return cargarOtro(k).catch(function(){ return null; }); }))
+      .then(function(lista){
+        var O = lista.filter(function(o){ return o && o.clave === m[1]; })[0];
+        if (!O) { r.invalido = 'El respaldo es de una hoja que esta aula no reconoce (' + m[1] + ').'; return r; }
+        r.tarea = O.nombre;
+        if (b36(djb2(O.sal + 'PASEF|' + m[1] + '|' + m[2])) !== m[3]) {
+          r.invalido = 'La firma no corresponde: el respaldo se copió a medias o fue modificado.'; return r;
+        }
+        var v;
+        try { v = JSON.parse(desdeBase64(m[2])); } catch (e) { r.invalido = 'El respaldo no se pudo leer.'; return r; }
+        var d = v.d || {};
+        r.nombre = normCaso(d.nombre); r.cedula = soloDigitos(d.cedula); r.guardado = v.ts;
+        r.respuestas = v.e || [];
+        var llenas = r.respuestas.filter(function(x){ return (x[1] || '').trim().length >= 3; }).length;
+        r.completado = llenas + '/' + r.respuestas.length;
+        if (!cedulaValida(r.cedula)) r.problemas.push('La cédula no supera el dígito verificador.');
+        return r;
+      });
+  }
+  function fichaOtro(r, n){
+    var div = document.createElement('section'); div.className = 'ficha';
+    var est = r.invalido ? '<span class="estado mal">No válido</span>'
+            : r.problemas.length ? '<span class="estado av">Válido, con observaciones</span>'
+            : '<span class="estado ok">Válido</span>';
+    var h = '<span class="tipo">Línea ' + n + ' · ' + esc(r.tarea || 'Tarea') + ' · '
+          + (r.tipo === 'respaldo' ? 'Respaldo del estudiante' : 'Código') + '</span>'
+          + '<h2>' + est + esc(r.nombre || '—') + '</h2>';
+    if (r.invalido) {
+      h += '<ul class="notas"><li>' + esc(r.invalido) + '</li></ul>';
+    } else {
+      h += '<dl><dt>Cédula</dt><dd>' + esc(r.cedula) + '</dd>'
+        + (r.campos || []).map(function(c){ return '<dt>' + esc(c[0]) + '</dt><dd>' + esc(c[1]) + '</dd>'; }).join('')
+        + (r.respuestas ? '<dt>Completado</dt><dd>' + r.completado + ' campos</dd>' : '')
+        + (r.guardado ? '<dt>Respaldo del</dt><dd>' + esc(new Date(r.guardado).toLocaleString('es-EC')) + '</dd>' : '')
+        + '</dl>';
+      if (r.problemas.length) h += '<ul class="notas"><li>' + r.problemas.map(esc).join('</li><li>') + '</li></ul>';
+      if (r.respuestas) {
+        h += '<details><summary>Respuestas de la hoja</summary>' + r.respuestas.map(function(x){
+          return '<div class="preg"><p class="enun">' + esc(x[0]) + '</p><p style="white-space:pre-wrap">'
+            + esc(x[1] || '(en blanco)') + '</p>' + (x[2] !== null && x[2] !== undefined
+              ? '<p class="op">Dónde consta: ' + esc(x[2] || '— no lo indicó —') + '</p>' : '') + '</div>';
+        }).join('') + '</details>';
+      }
+    }
+    div.innerHTML = h;
+    return div;
+  }
+
+  /* ---------- fichas de sustentacion ----------
+     Aunque los casos se trabajen en pareja, la sustentacion es alumno por
+     alumno. La ficha junta todo lo que se pego de un mismo estudiante y
+     propone preguntas que nacen de su propio trabajo: sus fallos, lo que dejo
+     sin desarrollar y, sobre todo, lo que el mismo afirmo. */
+  var EJES = [
+    ['la mercantilidad y el Código de Comercio', /art(í|i)culo\s*(1|3|7|8)|art\.\s*(1|3|7|8)|c(ó|o)digo\s*de\s*comercio/i],
+    ['la doctrina del bloque (Dávalos, Mantilla)', /d(á|a)valos|mantilla|formal|mixto|unilateral/i],
+    ['los títulos valores (Arts. 113 a 115 y 186)', /113|114|115|186|pagar(é|e)|letra|ejecutivo|solidar/i],
+    ['la Junta Universal del Art. 238', /238|universal|renuncia.*convocatoria|cien por ciento|100%/i],
+    ['la transformación societaria (Arts. 143 y 330)', /330|143|transformaci(ó|o)n|s\.a\.|bolsa|preferid/i],
+    ['la auditoría externa (Art. 318)', /318|auditor(í|i)a|externa|activo|responsabilidad|velo/i]
+  ];
+  function frases(texto){
+    return (texto || '').replace(/\s+/g, ' ').split(/(?<=[.;:!?])\s+/)
+      .map(function(s){ return s.trim(); })
+      .filter(function(s){ return s.length >= 70 && s.length <= 300; });
+  }
+  /* Una afirmacion con peso: cita norma, concluye o prescribe. */
+  function afirmacion(texto){
+    var fs = frases(texto), mejor = null, pts = -1;
+    fs.forEach(function(s){
+      var v = (/\b(art(\.|ículo|iculo)s?|ley|código|codigo)\b/i.test(s) ? 2 : 0)
+            + (/\b(por (lo )?tanto|en consecuencia|procede|debe|corresponde|no puede|es nul|es obligatori)/i.test(s) ? 2 : 0)
+            + (/\d/.test(s) ? 1 : 0);
+      if (v > pts) { pts = v; mejor = s; }
+    });
+    return mejor;
+  }
+
+  function prepararFicha(items){
+    var f = { nombre: '', cedula: '', pareja: '', evidencias: [], senales: [], preguntas: [], dossier: [] };
+    items.forEach(function(it){
+      var r = it.r;
+      if (!f.nombre || f.nombre.length < (r.nombre || '').length) f.nombre = r.nombre || f.nombre;
+      f.cedula = r.cedula;
+      if (r.pareja) f.pareja = r.pareja;
+
+      if (it.tipo === 'auto-pase' || it.tipo === 'auto-codigo') {
+        var nombreB = it.B.membrete.replace(/^.*?· (Bloque \d+)[^·]*·?\s*([^·]*).*$/, '$1 · $2').trim();
+        var nota = it.B.sin_nota ? 'lectura formativa' : fmtNota(r.nota) + ' / ' + it.B.nota_maxima;
+        f.evidencias.push('Autocontrol ' + nombreB + ': ' + r.aciertos + ' de ' + it.B.total + ' aciertos · ' + nota
+          + (it.tipo === 'auto-pase' ? ' (con respuestas)' : ' (solo código)'));
+        f.dossier.push('AUTOCONTROL ' + nombreB + ': ' + r.aciertos + '/' + it.B.total + ' aciertos.');
+        if (it.tipo === 'auto-pase') {
+          var flojas = r.por.filter(function(s){ return s.hechos && s.aciertos / s.total < 0.5; })
+            .sort(function(a, b){ return a.aciertos / a.total - b.aciertos / b.total; }).slice(0, 3);
+          if (flojas.length) f.senales.push('Secciones más flojas del autocontrol: ' + flojas.map(function(s){
+            return s.pestana.toLowerCase() + ' (' + s.aciertos + '/' + s.total + ')'; }).join(', ') + '.');
+          var porSec = {};
+          r.detalle.filter(function(d){ return d.elegida !== null && !d.acierto; }).forEach(function(d){
+            (porSec[d.seccion] = porSec[d.seccion] || []).push(d);
+          });
+          flojas.forEach(function(s){
+            var d = (porSec[s.pestana] || [])[0];
+            if (!d) return;
+            f.preguntas.push({ q: d.enunciado + ' Explíquelo con sus palabras y diga dónde lo sostiene el texto.',
+              base: 'Falló esta pregunta del autocontrol: eligió «' + (d.opciones[d.elegida] || '') + '»; la correcta era «'
+                + (d.opciones[d.correcta] || '') + '».' });
+            f.dossier.push('Falló: "' + d.enunciado + '" Eligió: "' + (d.opciones[d.elegida] || '') + '". Correcta: "' + (d.opciones[d.correcta] || '') + '".');
+          });
+        }
+      }
+
+      if (it.tipo === 'caso-respaldo' || it.tipo === 'caso-codigo') {
+        f.evidencias.push('Caso Harvard (' + (it.tipo === 'caso-respaldo' ? 'respaldo' : 'código del acta') + '): variante '
+          + r.variante + ' · control registral ' + r.aciertos + '/5');
+        r.control.filter(function(q){ return q.marcada !== q.correcta; }).forEach(function(q){
+          f.senales.push('Control registral: falló «' + q.rotulo + '».');
+          f.preguntas.push({ q: 'Sobre ' + q.rotulo + ': ¿qué exige exactamente la norma y por qué?',
+            base: 'En el control registral marcó ' + q.marcada + ') y la correcta era ' + q.correcta + ').' });
+        });
+        if (r.campos) {
+          var texto = PARTES.map(function(pt){ return r.campos[pt[0]] || ''; }).join('\n');
+          EJES.forEach(function(e){
+            if (!e[1].test(texto)) {
+              f.senales.push('El acta no menciona ' + e[0] + '.');
+              f.preguntas.push({ q: 'Su acta no se ocupa de ' + e[0] + '. ¿Cómo incide en la decisión de la junta de Andes Logistics?',
+                base: 'Eje del caso ausente en su redacción.' });
+            }
+          });
+          var corta = PARTES.slice(1).map(function(pt){ return [pt[1], (r.campos[pt[0]] || '').trim().length, pt[0]]; })
+            .sort(function(a, b){ return a[1] - b[1]; })[0];
+          f.senales.push('Su punto más breve: ' + corta[0] + ' (' + corta[1] + ' caracteres).');
+          f.preguntas.push({ q: 'Desarrolle de viva voz el ' + corta[0].split(' · ')[0] + ': ' + corta[0].split(' · ')[1].toLowerCase()
+            + '. ¿Qué le faltó decir por escrito?', base: 'Es la parte más breve de su acta (' + corta[1] + ' caracteres).' });
+          PARTES.slice(1).forEach(function(pt){
+            var a = afirmacion(r.campos[pt[0]]);
+            if (a && f.preguntas.filter(function(x){ return x.cita; }).length < 2) {
+              f.preguntas.push({ cita: true, q: 'Usted escribió: «' + a + '» ¿En qué norma o autor se apoya, y qué respondería si la contraparte lo objeta?',
+                base: 'Afirmación propia, ' + pt[1] + '.' });
+            }
+          });
+          f.dossier.push('ACTA DEL CASO HARVARD (variante ' + r.variante + '):\n' + PARTES.map(function(pt){
+            return pt[1] + ':\n' + (r.campos[pt[0]] || '(sin redactar)'); }).join('\n\n'));
+        }
+        f.dossier.push('CONTROL REGISTRAL: ' + r.aciertos + '/5. ' + r.control.filter(function(q){ return q.marcada !== q.correcta; })
+          .map(function(q){ return 'Falló: ' + q.rotulo; }).join('; '));
+      }
+
+      if (it.tipo === 'hoja') {
+        f.evidencias.push(r.tarea + ' (respaldo): ' + r.completado + ' campos con respuesta');
+        var vacias = r.respuestas.filter(function(x){ return (x[1] || '').trim().length < 40; });
+        vacias.slice(0, 2).forEach(function(x){
+          f.senales.push(r.tarea + ': «' + x[0] + '» quedó casi en blanco.');
+          f.preguntas.push({ q: 'En ' + r.tarea + ' dejó casi sin responder: «' + x[0] + '». Respóndalo ahora.',
+            base: 'Respuesta de menos de 40 caracteres.' });
+        });
+        var sinFuente = r.respuestas.filter(function(x){ return x[2] === '' && (x[1] || '').trim(); });
+        if (sinFuente.length) {
+          f.senales.push(r.tarea + ': ' + sinFuente.length + ' respuesta(s) sin indicar dónde consta.');
+          f.preguntas.push({ q: 'En ' + r.tarea + ' respondió «' + sinFuente[0][0] + '» sin decir dónde consta. ¿En qué página o párrafo lo encontró?',
+            base: 'Respuesta sin fuente.' });
+        }
+        var largas = r.respuestas.slice().sort(function(a, b){ return (b[1] || '').length - (a[1] || '').length; });
+        var a2 = largas.length ? afirmacion(largas[0][1]) : null;
+        if (a2) f.preguntas.push({ cita: true, q: 'En ' + r.tarea + ' escribió: «' + a2 + '» Defienda esa idea frente a un autor que piense lo contrario.',
+          base: 'Afirmación propia, «' + largas[0][0] + '».' });
+        f.dossier.push(r.tarea.toUpperCase() + ':\n' + r.respuestas.map(function(x){
+          return '- ' + x[0] + ': ' + (x[1] || '(en blanco)') + (x[2] !== null && x[2] !== undefined ? ' [Dónde consta: ' + (x[2] || 'no lo indicó') + ']' : ''); }).join('\n'));
+      }
+
+      if (it.tipo === 'otro') {
+        f.evidencias.push(r.tarea + ' (código): ' + r.campos.map(function(c){ return c[0].toLowerCase() + ' ' + c[1]; }).join(' · '));
+        f.dossier.push(r.tarea.toUpperCase() + ': ' + r.campos.map(function(c){ return c[0] + ' ' + c[1]; }).join(', '));
+      }
+    });
+    /* El respaldo y el codigo de una misma tarea dan las mismas senales. */
+    var vistas = {};
+    f.preguntas = f.preguntas.filter(function(q){ if (vistas[q.q]) return false; vistas[q.q] = 1; return true; });
+    f.senales = f.senales.filter(function(s){ if (vistas[s]) return false; vistas[s] = 1; return true; });
+    f.dossier = f.dossier.filter(function(s){ if (vistas[s]) return false; vistas[s] = 1; return true; });
+    return f;
+  }
+
+  function construirFichas(todos){
+    var cont = document.getElementById('fichas');
+    var grupos = {}, orden = [];
+    todos.forEach(function(it){
+      if (it.r.invalido || !it.r.cedula) return;
+      if (!grupos[it.r.cedula]) { grupos[it.r.cedula] = []; orden.push(it.r.cedula); }
+      grupos[it.r.cedula].push(it);
+    });
+    if (!orden.length) { cont.hidden = true; return; }
+    cont.innerHTML = '<h2>Fichas de sustentación</h2><p>Una por estudiante, con todo lo que pegó de él o ella. '
+      + 'Las preguntas salen de su propio trabajo; para preguntas sobre lo que escribió, pegue sus respaldos, '
+      + 'no solo los códigos.</p>';
+    orden.forEach(function(ced){
+      var f = prepararFicha(grupos[ced]);
+      var s = document.createElement('section');
+      s.className = 'ficha ficha-est';
+      s.innerHTML = '<span class="tipo">Ficha de sustentación</span><h3>' + esc(f.nombre) + ' · ' + esc(ced) + '</h3>'
+        + (f.pareja ? '<p class="op">Pareja de sustentación: ' + esc(f.pareja) + '</p>' : '')
+        + '<details open><summary>Evidencias (' + f.evidencias.length + ')</summary><ul class="notas"><li>'
+        + f.evidencias.map(esc).join('</li><li>') + '</li></ul></details>'
+        + (f.senales.length ? '<details><summary>Señales para la sustentación (' + f.senales.length + ')</summary><ul class="notas"><li>'
+            + f.senales.map(esc).join('</li><li>') + '</li></ul></details>' : '')
+        + '<details open><summary>Preguntas sugeridas (' + f.preguntas.length + ')</summary>'
+        + (f.preguntas.length ? '<ol>' + f.preguntas.map(function(q){
+            return '<li>' + esc(q.q) + '<span class="base">' + esc(q.base) + '</span></li>'; }).join('') + '</ol>'
+          : '<p class="op">Sin material suficiente: pegue los respaldos del estudiante, no solo los códigos.</p>')
+        + '</details>'
+        + '<div class="ia" hidden><p class="seccion-det">Preguntas afinadas con IA</p><div class="ia-salida"></div></div>'
+        + '<div class="acciones"><button type="button" class="b-ia">Afinar las preguntas con IA</button>'
+        + '<button type="button" class="sec b-pdf">Descargar la ficha en PDF</button></div>';
+      s.querySelector('.b-ia').addEventListener('click', function(){ afinarConIA(f, s, this); });
+      s.querySelector('.b-pdf').addEventListener('click', function(){ pdfFicha(f); });
+      cont.appendChild(s);
+    });
+    cont.hidden = false;
+  }
+
+  /* ---------- preguntas con IA ----------
+     Opcional y a pedido del docente. Lo que viaja: el trabajo del estudiante,
+     SIN su nombre ni su cedula. Pasa por el mismo Worker de los foros, que
+     guarda la clave y solo atiende a paginas de este dominio. */
+  var avisoIA = false;
+  function afinarConIA(f, s, boton){
+    if (!f.dossier.length) { alert('No hay trabajo del estudiante que enviar.'); return; }
+    if (!avisoIA && !confirm('Se enviará el trabajo de este estudiante —sin su nombre ni su cédula— al servicio '
+        + 'de IA que usan los foros del aula, para proponer preguntas. ¿Continuar?')) return;
+    avisoIA = true;
+    var caja = s.querySelector('.ia'), salida = s.querySelector('.ia-salida');
+    caja.hidden = false; salida.textContent = 'Preparando preguntas…'; boton.disabled = true;
+    var sistema = 'Eres el asistente de un profesor universitario de Derecho en Ecuador. Prepara preguntas para la '
+      + 'sustentación oral INDIVIDUAL de un estudiante, a partir SOLO de las evidencias de su trabajo que se te dan. '
+      + 'Escribe entre 6 y 8 preguntas, de menor a mayor exigencia. Para cada una da: la pregunta; en qué parte de su '
+      + 'trabajo se basa, con una cita breve y textual de lo que escribió o de su error; y qué debería contener una '
+      + 'buena respuesta. Incluye al menos una pregunta sobre un error concreto, una que le obligue a defender una '
+      + 'afirmación propia y una que conecte dos tareas distintas. No inventes artículos ni autores: si mencionas uno, '
+      + 'que aparezca en las evidencias. Trata al estudiante de usted. Responde en español, en texto plano, numerado.';
+    var cuerpo = { systemInstruction: { parts: [{ text: sistema }] },
+                   contents: [{ role: 'user', parts: [{ text: ('EVIDENCIAS DEL ESTUDIANTE\n\n' + f.dossier.join('\n\n')).slice(0, 60000) }] }],
+                   generationConfig: { temperature: 0.4 } };
+    fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) })
+      .then(function(r){ return r.json().then(function(d){ if (!r.ok) throw new Error((d && d.error) || ('HTTP ' + r.status)); return d; }); })
+      .then(function(d){
+        var c = d && d.candidates && d.candidates[0];
+        var txt = c && c.content && c.content.parts ? c.content.parts.map(function(p){ return p.text || ''; }).join('').trim() : '';
+        if (!txt) throw new Error('El servicio de IA no devolvió texto.');
+        f.ia = txt.replace(/\*\*/g, '').replace(/^#+\s*/gm, '');
+        salida.textContent = f.ia;
+      })
+      .catch(function(e){ salida.textContent = 'No se pudo consultar la IA: ' + e.message + '. Las preguntas automáticas de arriba siguen disponibles.'; })
+      .then(function(){ boton.disabled = false; });
+  }
+
+  function pdfFicha(f){
+    var J = window.jspdf && window.jspdf.jsPDF;
+    if (!J) { alert('No se pudo cargar el generador de PDF. Revise su conexión y recargue la página.'); return; }
+    var doc = new J({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    var IZQ = 18, ANCHO = 174, y = 20;
+    function salto(h){ if (y + h > 284) { doc.addPage(); y = 18; } }
+    function linea(texto, tam, estilo, color, sangria, alto){
+      doc.setFont(estilo === 'titulo' ? 'times' : 'helvetica', estilo === 'titulo' ? 'bold' : estilo);
+      doc.setFontSize(tam); doc.setTextColor(color);
+      String(texto).split('\n').forEach(function(par){
+        doc.splitTextToSize(par || ' ', ANCHO - sangria).forEach(function(l){ salto(alto); doc.text(l, IZQ + sangria, y); y += alto; });
+      });
+    }
+    linea(document.querySelector('.emisor').textContent.toUpperCase(), 8.5, 'normal', 90, 0, 4.5);
+    y += 2; linea('Ficha de sustentación', 18, 'titulo', 0, 0, 8);
+    linea(f.nombre + ' · Cédula ' + f.cedula + (f.pareja ? ' · Pareja: ' + f.pareja : ''), 10, 'bold', 0, 0, 5);
+    linea('Preparada el ' + new Date().toLocaleString('es-EC') + ' con la mesa del docente. Uso del docente.', 8.5, 'normal', 90, 0, 4.5);
+    y += 3; doc.setDrawColor(0); doc.setLineWidth(0.3); doc.line(IZQ, y, IZQ + ANCHO, y); y += 6;
+    linea('EVIDENCIAS', 9, 'bold', 60, 0, 5);
+    f.evidencias.forEach(function(e){ linea('• ' + e, 9.5, 'normal', 0, 2, 4.8); });
+    if (f.senales.length) {
+      y += 3; linea('SEÑALES', 9, 'bold', 60, 0, 5);
+      f.senales.forEach(function(e){ linea('• ' + e, 9.5, 'normal', 0, 2, 4.8); });
+    }
+    y += 3; linea('PREGUNTAS SUGERIDAS', 9, 'bold', 60, 0, 5);
+    f.preguntas.forEach(function(q, i){
+      salto(24);
+      linea((i + 1) + '. ' + q.q, 10, 'bold', 0, 0, 5);
+      linea(q.base, 8.5, 'normal', 100, 5, 4.3);
+      linea('Notas: ______________________________________________________________', 9, 'normal', 160, 5, 7);
+      y += 1;
+    });
+    if (f.ia) { y += 3; linea('PREGUNTAS AFINADAS CON IA', 9, 'bold', 60, 0, 5); linea(f.ia, 9.5, 'normal', 0, 0, 4.8); }
+    doc.save('Ficha_sustentacion_' + f.cedula + '_' + f.nombre.replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40) + '.pdf');
+  }
+
   /* ---------- pintar ---------- */
   function ficha(r, B, n){
     var div = document.createElement('section');
@@ -654,6 +1019,13 @@ code{font-size:.8rem;overflow-wrap:anywhere}
       var h = linea.match(/PASEH\|[A-Za-z0-9+\/=]+\|[0-9A-Z]+/) || linea.match(/\bCH\|\d{6,}\|.*$/);
       if (h) return h[0].trim();
     }
+    var f = linea.match(/PASEF\|[^|\s]+\|[A-Za-z0-9+\/=]+\|[0-9A-Z]+/);
+    if (f) return f[0];
+    var otros = Object.keys(OTROS).join('|');
+    if (otros) {
+      var o = linea.match(new RegExp('\\b(' + otros + ')\\|\\d{6,}\\|.*$'));
+      if (o) return o[0].trim();
+    }
     var m = linea.match(new RegExp('PASE\\|(' + CLAVES + ')\\|.*$'))
          || linea.match(new RegExp('\\b(' + CLAVES + ')\\|\\d{6,}\\|.*$'));
     return m ? m[0].trim() : null;
@@ -663,7 +1035,8 @@ code{font-size:.8rem;overflow-wrap:anywhere}
     var res = document.getElementById('resultados'), msg = document.getElementById('mensaje');
     res.innerHTML = ''; filasCsv = []; document.getElementById('csv').disabled = true;
     var lineas = document.getElementById('entrada').value.split(/\r?\n/);
-    var tareas = [], ignoradas = 0, casos = [];
+    var tareas = [], ignoradas = 0, casos = [], todos = [];
+    document.getElementById('fichas').hidden = true;
     lineas.forEach(function(l, i){
       if (!l.trim()) return;
       var t = extraer(l);
@@ -679,10 +1052,29 @@ code{font-size:.8rem;overflow-wrap:anywhere}
     var cadena = Promise.resolve();
     tareas.forEach(function(t){
       cadena = cadena.then(function(){
+        var pref = t.texto.split('|')[0];
+        if (pref === 'PASEF' || OTROS[pref]) {
+          var prom = pref === 'PASEF' ? leerPaseHoja(t.texto) : cargarOtro(pref).then(function(O){ return leerCodigoOtro(t.texto, O); });
+          return prom.then(function(r){
+            r.n = t.n;
+            todos.push({ tipo: pref === 'PASEF' ? 'hoja' : 'otro', r: r });
+            res.appendChild(fichaOtro(r, t.n));
+            filasCsv.push([r.nombre || '', r.cedula || '', r.tarea || '', r.tipo,
+              r.invalido ? 'NO VALIDO' : (r.problemas.length ? 'CON OBSERVACIONES' : 'VALIDO'),
+              r.nota !== undefined && !r.invalido ? fmtNota(r.nota) : '', r.completado || '',
+              (r.invalido ? [r.invalido] : r.problemas).join(' / ')]);
+          }, function(e){
+            var d = document.createElement('section'); d.className = 'ficha';
+            d.innerHTML = '<span class="tipo">Línea ' + t.n + '</span><h2><span class="estado mal">Error</span></h2>'
+              + '<ul class="notas"><li>' + esc(e.message) + '</li></ul>';
+            res.appendChild(d);
+          });
+        }
         if (/^(PASEH|CH)\|/.test(t.texto)) {
           return cargarCaso().then(function(C){
             var r = t.texto.indexOf('PASEH|') === 0 ? leerPaseCaso(t.texto, C) : leerCodigoCaso(t.texto, C);
             casos.push(r);
+            todos.push({ tipo: r.tipo === 'respaldo' ? 'caso-respaldo' : 'caso-codigo', r: r, C: C });
             res.appendChild(fichaCaso(r, C, t.n));
             filasCsv.push([r.nombre || '', r.cedula || '', 'CASO HARVARD', r.tipo,
               r.invalido ? 'NO VALIDO' : (r.problemas.length ? 'CON OBSERVACIONES' : 'VALIDO'),
@@ -699,6 +1091,7 @@ code{font-size:.8rem;overflow-wrap:anywhere}
         return banco(bloque).then(function(B){
           var r = t.texto.indexOf('PASE|') === 0 ? leerPase(t.texto, B) : leerCodigo(t.texto, B);
           res.appendChild(ficha(r, B, t.n));
+          todos.push({ tipo: r.tipo === 'pase' ? 'auto-pase' : 'auto-codigo', r: r, B: B });
           filasCsv.push([r.nombre || '', r.cedula || '', bloque, r.tipo,
             r.invalido ? 'NO VALIDO' : (r.problemas.length ? 'CON OBSERVACIONES' : 'VALIDO'),
             (r.invalido || B.sin_nota) ? '' : fmtNota(r.nota), r.invalido ? '' : r.aciertos,
@@ -713,6 +1106,7 @@ code{font-size:.8rem;overflow-wrap:anywhere}
     });
     cadena.then(function(){
       cruzarCasos(casos);
+      construirFichas(todos);
       msg.textContent = tareas.length + (tareas.length === 1 ? ' elemento revisado' : ' elementos revisados')
         + (ignoradas ? '; ' + ignoradas + ' línea(s) sin pase ni código, ignoradas.' : '.');
       document.getElementById('csv').disabled = !filasCsv.length;
