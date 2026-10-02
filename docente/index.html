@@ -56,6 +56,21 @@ code{font-size:.8rem;overflow-wrap:anywhere}
 .seccion-det{margin:.8em 0 .2em;font-size:.8rem;letter-spacing:.05em;text-transform:uppercase;color:var(--suave)}
 .mensaje{color:var(--suave);margin-top:14px}
 .limite{font-size:.85rem;color:var(--suave);margin-top:28px;border-top:1px solid var(--linea);padding-top:12px}
+.suelta{border:2px dashed var(--acento);border-radius:12px;padding:22px 16px;text-align:center;cursor:pointer;background:var(--hoja)}
+.suelta.encima{background:var(--bien-fondo)}
+.suelta b{display:block;font-size:1.08rem;margin-bottom:.3em}
+.suelta span{color:var(--suave);font-size:.9rem}
+.pegar{margin-top:12px}
+.pegar summary{cursor:pointer;color:var(--acento);font-size:.92rem}
+.reporte{margin-top:26px}
+.reporte>h2{font-family:Georgia,"Times New Roman",serif;font-size:1.35rem;margin:0 0 .2em}
+.tabla-caja{overflow-x:auto;margin-top:.6em;border:1px solid var(--linea);border-radius:8px;background:var(--hoja)}
+.tabla-caja table{margin:0;font-size:.86rem;min-width:640px}
+.tabla-caja td,.tabla-caja th{white-space:nowrap}
+.tabla-caja td.sug{white-space:normal;min-width:16em}
+.nivel{display:inline-block;min-width:3.2em;text-align:center;border-radius:99px;font-size:.78rem;font-weight:600;padding:.05em .4em}
+.barra{display:inline-block;width:110px;height:8px;border-radius:99px;background:var(--linea);vertical-align:middle;margin:0 .5em;overflow:hidden}
+.barra i{display:block;height:100%;background:var(--acento)}
 .fichas{margin-top:26px}
 .fichas>h2{font-family:Georgia,"Times New Roman",serif;font-size:1.35rem;margin:0 0 .2em}
 .fichas>p{color:var(--suave);font-size:.92rem;margin:.2em 0 .6em}
@@ -73,6 +88,15 @@ code{font-size:.8rem;overflow-wrap:anywhere}
   <h1>Mesa del docente</h1>
 
   <section class="entrada">
+    <label class="suelta" id="suelta" for="archivos">
+      <b>Suelte aquí lo que descargó de Moodle</b>
+      <span>El ZIP de «Descargar todas las entregas», los PDF sueltos y sus reportes de Moodle
+        (calificaciones o finalización, en Excel o CSV). Puede soltar varios a la vez.</span>
+    </label>
+    <input type="file" id="archivos" multiple hidden
+           accept=".zip,.pdf,.csv,.xlsx,.xls,.ods,application/pdf,application/zip">
+    <details class="pegar">
+    <summary>O pegue códigos y respaldos a mano</summary>
     <p>Pegue aquí, uno por línea, los <b>pases de avance</b> (empiezan por <code>PASE|M1|</code>)
       o los <b>códigos de validación</b> de las constancias (empiezan por <code>M1|</code> o
       <code>M2|</code>). Del <b>Caso Harvard</b>, el respaldo (<code>PASEH|</code>) y el código del acta
@@ -85,11 +109,20 @@ code{font-size:.8rem;overflow-wrap:anywhere}
       <button type="button" class="sec" id="csv" disabled>Descargar resumen (CSV)</button>
       <button type="button" class="sec" id="limpiar">Limpiar</button>
     </div>
+    </details>
   </section>
 
   <p class="mensaje" id="mensaje" role="status"></p>
-  <div id="resultados"></div>
+  <section class="reporte" id="reporte" hidden></section>
   <section class="fichas" id="fichas" hidden></section>
+  <details id="detalle-archivos" hidden><summary id="detalle-titulo">Detalle de cada entrega</summary>
+  <div id="resultados"></div>
+  </details>
+
+  <p class="limite"><b>Cómo se usa.</b> En Moodle, en cada tarea, «Ver todas las entregas» → «Descargar todas
+    las entregas»: baja un ZIP. Suéltelo aquí junto con los que quiera de otras tareas y, si quiere, el reporte de
+    calificaciones de Moodle (Calificaciones → Exportar, en Excel). Cada PDF del aula lleva dentro sus datos: el
+    estudiante no tiene que copiar nada. Salen un <b>reporte del grupo</b> y una <b>ficha individual</b> por estudiante.</p>
 
   <p class="limite"><b>Qué hace cada cosa.</b> Con un <b>pase</b>, la página recalcula la nota
     a partir de las respuestas, igual que el autocontrol, muestra pregunta por pregunta qué
@@ -118,8 +151,8 @@ code{font-size:.8rem;overflow-wrap:anywhere}
   var CASO = '../caso-harvard/';
   /* Otras tareas con codigo firmado: prefijo del codigo -> [pagina, nombre].
      La sal se lee de cada pagina publicada. */
-  var OTROS = { AD1: ['../foro-b1/', 'Foro socrático · Bloque 1'],
-                AD2: ['../foro-b2/', 'Foro socrático · Bloque 2'] };
+  var OTROS = { AD1: ['../foro-b1/', 'Foro socrático · Bloque 1', 10],
+                AD2: ['../foro-b2/', 'Foro socrático · Bloque 2', 10] };
   /* El mismo Worker de los foros: guarda la clave de la IA y solo responde a
      paginas de este dominio. */
   var WORKER_URL = 'https://aula-mercantil-ia.carloseduardochica.workers.dev';
@@ -537,8 +570,8 @@ code{font-size:.8rem;overflow-wrap:anywhere}
         var igual = pa.huella === cod.huella;
         var li = document.createElement('li');
         li.textContent = igual
-          ? 'La huella del texto coincide con el acta entregada (código de la línea ' + cod.n + '): es el mismo texto.'
-          : 'La huella del texto NO coincide con el acta entregada (código de la línea ' + cod.n + '): el texto cambió después de emitirla, o es otro.';
+          ? 'La huella del texto coincide con el acta entregada (' + donde(cod.n) + '): es el mismo texto.'
+          : 'La huella del texto NO coincide con el acta entregada (' + donde(cod.n) + '): el texto cambió después de emitirla, o es otro.';
         var ul = pa.nodo.querySelector('ul.cruce');
         if (ul) { ul.appendChild(li); ul.hidden = false; }
       });
@@ -552,7 +585,7 @@ code{font-size:.8rem;overflow-wrap:anywhere}
     var est = r.invalido ? '<span class="estado mal">No válido</span>'
             : r.problemas.length ? '<span class="estado av">Válido, con observaciones</span>'
             : '<span class="estado ok">Válido</span>';
-    var h = '<span class="tipo">Línea ' + n + ' · Caso Harvard · '
+    var h = '<span class="tipo">' + esc(donde(n)) + ' · Caso Harvard · '
           + (r.tipo === 'respaldo' ? 'Respaldo del estudiante' : 'Código del acta') + '</span>'
           + '<h2>' + est + esc(r.nombre || '—') + '</h2>';
     if (r.invalido) {
@@ -656,7 +689,7 @@ code{font-size:.8rem;overflow-wrap:anywhere}
   }
   function leerCodigoOtro(texto, O){
     var p = texto.split('|');
-    var r = { tipo: 'codigo', texto: texto, problemas: [], tarea: O.nombre, nombre: p[2], cedula: p[1] };
+    var r = { tipo: 'codigo', texto: texto, problemas: [], tarea: O.nombre, nombre: p[2], cedula: p[1], pref: O.pref };
     if (p.length < 5) { r.invalido = 'El código está cortado o incompleto.'; return r; }
     if (b36(djb2(O.sal + p.slice(0, -1).join('|'))) !== p[p.length - 1]) {
       r.invalido = 'La firma no corresponde a los datos: el código fue modificado o copiado con errores.'; return r;
@@ -678,7 +711,7 @@ code{font-size:.8rem;overflow-wrap:anywhere}
       .then(function(lista){
         var O = lista.filter(function(o){ return o && o.clave === m[1]; })[0];
         if (!O) { r.invalido = 'El respaldo es de una hoja que esta aula no reconoce (' + m[1] + ').'; return r; }
-        r.tarea = O.nombre;
+        r.tarea = O.nombre; r.pref = O.pref;
         if (b36(djb2(O.sal + 'PASEF|' + m[1] + '|' + m[2])) !== m[3]) {
           r.invalido = 'La firma no corresponde: el respaldo se copió a medias o fue modificado.'; return r;
         }
@@ -698,7 +731,7 @@ code{font-size:.8rem;overflow-wrap:anywhere}
     var est = r.invalido ? '<span class="estado mal">No válido</span>'
             : r.problemas.length ? '<span class="estado av">Válido, con observaciones</span>'
             : '<span class="estado ok">Válido</span>';
-    var h = '<span class="tipo">Línea ' + n + ' · ' + esc(r.tarea || 'Tarea') + ' · '
+    var h = '<span class="tipo">' + esc(donde(n)) + ' · ' + esc(r.tarea || 'Tarea') + ' · '
           + (r.tipo === 'respaldo' ? 'Respaldo del estudiante' : 'Código') + '</span>'
           + '<h2>' + est + esc(r.nombre || '—') + '</h2>';
     if (r.invalido) {
@@ -710,6 +743,11 @@ code{font-size:.8rem;overflow-wrap:anywhere}
         + (r.guardado ? '<dt>Respaldo del</dt><dd>' + esc(new Date(r.guardado).toLocaleString('es-EC')) + '</dd>' : '')
         + '</dl>';
       if (r.problemas.length) h += '<ul class="notas"><li>' + r.problemas.map(esc).join('</li><li>') + '</li></ul>';
+      if (r.intervenciones) {
+        h += '<details><summary>Sus intervenciones en el foro</summary>' + r.intervenciones.map(function(x, i){
+          return '<div class="preg"><p class="enun">Intervención ' + (i + 1) + '</p><p style="white-space:pre-wrap">' + esc(x) + '</p></div>';
+        }).join('') + '</details>';
+      }
       if (r.respuestas) {
         h += '<details><summary>Respuestas de la hoja</summary>' + r.respuestas.map(function(x){
           return '<div class="preg"><p class="enun">' + esc(x[0]) + '</p><p style="white-space:pre-wrap">'
@@ -720,6 +758,366 @@ code{font-size:.8rem;overflow-wrap:anywhere}
     }
     div.innerHTML = h;
     return div;
+  }
+
+  /* =================================================================
+     ARCHIVOS DE MOODLE
+     El estudiante solo sube su PDF. Cada PDF del aula lleva dentro su codigo
+     y su respaldo (en sus propiedades o, en las hojas impresas, en un bloque
+     final). El docente suelta aqui el ZIP de «Descargar todas las entregas» y
+     los reportes de Moodle, y la mesa lo lee todo.
+     Las bibliotecas se cargan solo cuando hacen falta.
+     ================================================================= */
+  var LIBS = {
+    pdf: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
+    pdfWorker: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
+    zip: 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
+    xlsx: 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
+  };
+  var libsCargadas = {};
+  function cargarLib(url, global){
+    if (window[global]) return Promise.resolve(window[global]);
+    if (!libsCargadas[url]) libsCargadas[url] = new Promise(function(ok, mal){
+      var s = document.createElement('script'); s.src = url;
+      s.onload = function(){ ok(window[global]); };
+      s.onerror = function(){ delete libsCargadas[url]; mal(new Error('No se pudo cargar una biblioteca; revise su conexión.')); };
+      document.head.appendChild(s);
+    });
+    return libsCargadas[url];
+  }
+
+  /* Moodle nombra cada carpeta del ZIP «Nombre Apellido_123456_assignsubmission_file_». */
+  function nombreEntrega(ruta){
+    var m = ruta.match(/(?:^|\/)([^\/]+?)_\d+_assignsubmission/);
+    return m ? m[1] : null;
+  }
+  function extension(n){ var m = n.toLowerCase().match(/\.([a-z0-9]+)$/); return m ? m[1] : ''; }
+
+  function leerPdf(buf, etiqueta, quien){
+    return cargarLib(LIBS.pdf, 'pdfjsLib').then(function(lib){
+      lib.GlobalWorkerOptions.workerSrc = LIBS.pdfWorker;
+      return lib.getDocument({ data: buf }).promise;
+    }).then(function(doc){
+      return doc.getMetadata().then(function(md){
+        var hallados = [];
+        String((md && md.info && md.info.Keywords) || '').split(/\r?\n/).forEach(function(l){
+          var x = extraer(l); if (x) hallados.push(x);
+        });
+        if (hallados.length) return hallados;
+        /* Las hojas se imprimen: sus datos van en un bloque de texto al final. */
+        var n = Math.min(doc.numPages, 60), textos = [], cadena = Promise.resolve();
+        for (var i = Math.max(1, n - 3); i <= n; i++) (function(k){
+          cadena = cadena.then(function(){ return doc.getPage(k); })
+            .then(function(pg){ return pg.getTextContent(); })
+            .then(function(tc){ textos.push(tc.items.map(function(it){ return it.str; }).join('')); });
+        })(i);
+        return cadena.then(function(){
+          var todo = textos.join(''), m = todo.match(/INICIO-DATOS([\s\S]*?)FIN-DATOS/);
+          if (m) { var x = extraer(m[1].replace(/\s+/g, '')); if (x) hallados.push(x); }
+          return hallados;
+        });
+      });
+    }).then(function(hallados){
+      if (!hallados.length) lote.vacios.push({ etiqueta: etiqueta, quien: quien });
+      hallados.forEach(function(x){ lote.items.push({ n: etiqueta, texto: x }); });
+    }, function(){
+      lote.vacios.push({ etiqueta: etiqueta + ' (no se pudo abrir)', quien: quien });
+    });
+  }
+
+  function leerTabla(buf, etiqueta){
+    return cargarLib(LIBS.xlsx, 'XLSX').then(function(X){
+      var wb = X.read(buf, { type: 'array' });
+      wb.SheetNames.forEach(function(sn){
+        var filas = X.utils.sheet_to_json(wb.Sheets[sn], { header: 1, defval: '', raw: false });
+        if (filas.length > 1) lote.moodle.push({ archivo: etiqueta + (wb.SheetNames.length > 1 ? ' · ' + sn : ''), filas: filas });
+      });
+    });
+  }
+
+  function leerArchivo(nombre, buf){
+    var ext = extension(nombre);
+    if (ext === 'zip') {
+      return cargarLib(LIBS.zip, 'JSZip').then(function(Z){ return Z.loadAsync(buf); }).then(function(zip){
+        var cadena = Promise.resolve();
+        zip.forEach(function(ruta, ent){
+          if (ent.dir || /(^|\/)(__MACOSX|\.)/.test(ruta)) return;
+          cadena = cadena.then(function(){
+            return ent.async('arraybuffer').then(function(b){
+              var quien = nombreEntrega(ruta);
+              var etq = (quien ? quien + ' · ' : '') + ruta.split('/').pop();
+              return leerUno(etq, ruta, b, quien);
+            });
+          });
+        });
+        return cadena;
+      });
+    }
+    return leerUno(nombre, nombre, buf, null);
+  }
+  function leerUno(etiqueta, nombre, buf, quien){
+    var ext = extension(nombre);
+    if (ext === 'pdf') return leerPdf(new Uint8Array(buf), etiqueta, quien);
+    if (/^(csv|xlsx|xls|ods)$/.test(ext)) return leerTabla(buf, etiqueta);
+    if (ext === 'txt') {
+      new TextDecoder().decode(buf).split(/\r?\n/).forEach(function(l){
+        var x = extraer(l); if (x) lote.items.push({ n: etiqueta, texto: x });
+      });
+    }
+    return Promise.resolve();
+  }
+
+  function recibirArchivos(lista){
+    var msg = document.getElementById('mensaje');
+    var archivos = Array.prototype.slice.call(lista || []);
+    if (!archivos.length) return;
+    msg.textContent = 'Leyendo ' + archivos.length + ' archivo(s)…';
+    var cadena = Promise.resolve();
+    archivos.forEach(function(a){
+      cadena = cadena.then(function(){
+        return a.arrayBuffer().then(function(b){ return leerArchivo(a.name, b); })
+          .catch(function(e){ lote.vacios.push({ etiqueta: a.name + ' (' + e.message + ')', quien: null }); });
+      });
+    });
+    cadena.then(revisar);
+  }
+  (function(){
+    var zona = document.getElementById('suelta'), inp = document.getElementById('archivos');
+    inp.addEventListener('change', function(){ recibirArchivos(inp.files); inp.value = ''; });
+    ['dragenter', 'dragover'].forEach(function(ev){
+      zona.addEventListener(ev, function(e){ e.preventDefault(); zona.classList.add('encima'); });
+    });
+    ['dragleave', 'drop'].forEach(function(ev){
+      zona.addEventListener(ev, function(e){ e.preventDefault(); zona.classList.remove('encima'); });
+    });
+    zona.addEventListener('drop', function(e){ recibirArchivos(e.dataTransfer.files); });
+  })();
+
+  /* ---------- acta del foro ---------- */
+  function leerPaseForo(texto){
+    var p = texto.split('|');
+    var r = { tipo: 'respaldo', texto: texto, problemas: [], pref: p[1] };
+    if (!OTROS[p[1]]) { r.invalido = 'El acta es de un foro que esta aula no reconoce (' + p[1] + ').'; return Promise.resolve(r); }
+    return cargarOtro(p[1]).then(function(O){
+      r.tarea = O.nombre;
+      if (b36(djb2(O.sal + p.slice(0, 3).join('|'))) !== p[3]) { r.invalido = 'La firma del acta no corresponde.'; return r; }
+      var d;
+      try { d = JSON.parse(desdeBase64(p[2])); } catch (e) { r.invalido = 'El acta no se pudo leer.'; return r; }
+      r.nombre = normCaso(d.nom); r.cedula = soloDigitos(d.ced); r.postura = d.postura || '';
+      r.intervenciones = d.intervenciones || [];
+      r.completado = r.intervenciones.length + ' intervenciones';
+      return r;
+    });
+  }
+
+  /* =================================================================
+     REPORTES DE MOODLE
+     Se reconocen las columnas por su nombre (en espanol o en ingles). El
+     estudiante se une por cedula si Moodle la trae; si no, por su nombre.
+     ================================================================= */
+  function fichaVacia(nombre, ced){
+    return { nombre: nombre, cedula: ced || '', pareja: '', evidencias: [], senales: [], preguntas: [], dossier: [],
+             tareas: {}, camino: [], moodle: [], m: { comp: [], arg: [], rig: [], apl: [] }, flojas: [], soloMoodle: true };
+  }
+  function fichas2tokens(s){ return normCaso(s).split(' ').filter(function(x){ return x.length > 1; }); }
+  function parecido(a, b){
+    var ta = fichas2tokens(a), tb = fichas2tokens(b), c = 0;
+    ta.forEach(function(x){ if (tb.indexOf(x) !== -1) c++; });
+    return c >= Math.min(2, ta.length, tb.length) ? c : 0;
+  }
+  function buscarEstudiante(lista, nombre, ced){
+    if (ced) { var e = lista.filter(function(x){ return x.cedula === ced; })[0]; if (e) return e; }
+    var mejor = null, pts = 0, empate = false;
+    lista.forEach(function(x){
+      var s = parecido(nombre, x.nombre);
+      if (s > pts) { pts = s; mejor = x; empate = false; } else if (s && s === pts) empate = true;
+    });
+    return (mejor && !empate) ? mejor : null;
+  }
+  var IGNORAR = /^(instituci[oó]n|departamento|[uú]ltima descarga|last downloaded|institution|department|direcci[oó]n de correo|email|correo)/i;
+  function unirMoodle(estudiantes){
+    lote.moodle.forEach(function(tab){
+      var cab = null, iCab = -1;
+      for (var i = 0; i < Math.min(8, tab.filas.length); i++) {
+        if (tab.filas[i].some(function(c){ return /^(nombre|apellido|first name|surname|last name|nombre completo|full name|estudiante|alumno|usuario)/i.test(String(c).trim()); })) { cab = tab.filas[i]; iCab = i; break; }
+      }
+      if (!cab) return;
+      var col = function(re){ for (var k = 0; k < cab.length; k++) if (re.test(String(cab[k]).trim())) return k; return -1; };
+      var iNom = col(/^(nombre|first name|nombres)$/i), iApe = col(/^(apellido|apellidos|apellido\(s\)|surname|last name)/i);
+      var iFull = col(/^(nombre completo|full name|estudiante|alumno|usuario)/i), iId = col(/(n[uú]mero de id|id number|c[eé]dula|identificaci)/i);
+      tab.filas.slice(iCab + 1).forEach(function(fila){
+        var nombre = iFull !== -1 ? fila[iFull] : ((iNom !== -1 ? fila[iNom] : '') + ' ' + (iApe !== -1 ? fila[iApe] : ''));
+        if (!String(nombre).trim()) return;
+        var ced = '';
+        fila.forEach(function(c){ var d = soloDigitos(String(c)); if (!ced && d.length === 10 && cedulaValida(d)) ced = d; });
+        if (iId !== -1 && cedulaValida(soloDigitos(fila[iId]))) ced = soloDigitos(fila[iId]);
+        var e = buscarEstudiante(estudiantes, nombre, ced);
+        if (!e) { e = fichaVacia(normCaso(nombre), ced); estudiantes.push(e); }
+        if (!e.cedula && ced) e.cedula = ced;
+        cab.forEach(function(h, k){
+          if (k === iNom || k === iApe || k === iFull || k === iId) return;
+          var v = String(fila[k] == null ? '' : fila[k]).trim(), hh = String(h).trim();
+          if (!hh || !v || v === '-' || IGNORAR.test(hh)) return;
+          if (e.moodle.some(function(x){ return x[0] === hh; })) return;
+          e.moodle.push([hh, v]);
+        });
+      });
+    });
+    /* PDF que no traen datos del aula (por ejemplo, impresos con otra version):
+       se anotan en el estudiante por el nombre de su carpeta en el ZIP. */
+    lote.vacios.forEach(function(v){
+      if (!v.quien) return;
+      var e = buscarEstudiante(estudiantes, v.quien, '');
+      if (!e) { e = fichaVacia(normCaso(v.quien), ''); estudiantes.push(e); }
+      e.evidencias.push('Entregó un PDF sin datos del aula: ' + v.etiqueta.split(' · ').pop() + ' (revíselo a mano)');
+    });
+    estudiantes.sort(function(a, b){ return a.nombre < b.nombre ? -1 : 1; });
+  }
+
+  /* =================================================================
+     PERFIL DE HABILIDADES Y PERSONALIZACION
+     Cuatro dimensiones, cada una con su regla a la vista para que el docente
+     sepa de donde sale. Sin datos de una dimension, no se inventa: queda vacia.
+     ================================================================= */
+  var DIM = [
+    ['comp', 'Comprensión', 'aciertos en los autocontroles'],
+    ['arg', 'Argumentación', 'nota del foro y afirmaciones propias que se apoyan en norma, autor o fuente'],
+    ['rig', 'Rigor con las fuentes', 'respuestas con «dónde consta» y artículos citados en el acta'],
+    ['apl', 'Aplicación al caso', 'control registral y ejes del caso cubiertos en el acta']
+  ];
+  function citas(texto){ return ((texto || '').match(/\b(art(\.|[ií]culo)s?\s*\d+|arts?\.\s*\d+)/gi) || []).length; }
+  function fundamentacion(texto){
+    var fs = frases(texto).filter(function(s){ return /\b(por (lo )?tanto|en consecuencia|procede|debe|corresponde|no puede|es nul|es obligatori|sostengo|considero|concluyo)/i.test(s); });
+    if (!fs.length) return 0.3;
+    return fs.filter(function(s){ return /\b(art(\.|[ií]culo)|ley|c[oó]digo|constituci|sentencia|p[aá]g|¶|seg[uú]n|conforme|como sostiene|para [A-ZÁÉÍÓÚ])/i.test(s); }).length / fs.length;
+  }
+  function nivel(v){ return v === null ? null : v >= 0.75 ? 'Alto' : v >= 0.5 ? 'Medio' : 'Bajo'; }
+  function colorNivel(n){ return n === 'Alto' ? 'ok' : n === 'Medio' ? 'av' : 'mal'; }
+  function perfilar(f){
+    f.camino.sort(function(a, b){ return a[0] - b[0]; });
+    f.perfil = {};
+    DIM.forEach(function(d){
+      var xs = f.m[d[0]];
+      f.perfil[d[0]] = xs.length ? xs.reduce(function(a, b){ return a + b; }, 0) / xs.length : null;
+    });
+    var bajas = DIM.filter(function(d){ return f.perfil[d[0]] !== null; })
+      .sort(function(a, b){ return f.perfil[a[0]] - f.perfil[b[0]]; });
+    f.debil = bajas.length && f.perfil[bajas[0][0]] < 0.75 ? bajas[0][0] : null;
+    f.sugerencia = f.soloMoodle && !f.evidencias.length ? 'No hay trabajo suyo en el aula: conviene contactarlo antes que nada.'
+                 : f.debil ? recomendar(f.debil, f) : (bajas.length ? 'Va bien en todo lo medido: proponerle un reto (defender la postura contraria en el foro o en la sustentación).' : 'Sin datos suficientes para recomendar.');
+  }
+  function recomendar(dim, f){
+    if (dim === 'comp') return 'Lectura guiada: repasar ' + (f.flojas.length ? f.flojas.slice(0, 2).join(' y ') : 'las secciones falladas')
+      + ' y explicarlas con sus palabras antes de la sustentación.';
+    if (dim === 'arg') return 'Contraargumentación: tomar una afirmación suya y defenderla por escrito frente a la objeción más fuerte, citando norma o autor.';
+    if (dim === 'rig') return 'Trabajo con fuentes: devolverle dos respuestas para que indique la página, el párrafo o el artículo de donde salen.';
+    return 'Caso aplicado: resolver de nuevo lo que falló del control registral con la norma delante y justificar en tres líneas.';
+  }
+  function perfilHtml(f){
+    if (!f.perfil) return '';
+    var h = '<details open><summary>Perfil de habilidades</summary><dl>';
+    DIM.forEach(function(d){
+      var v = f.perfil[d[0]], n = nivel(v);
+      h += '<dt>' + d[1] + '</dt><dd>' + (v === null ? '<span class="op">sin datos</span>'
+        : '<span class="barra"><i style="width:' + Math.round(v * 100) + '%"></i></span><span class="nivel ' + colorNivel(n) + '">' + n + '</span>') + '</dd>';
+    });
+    h += '</dl><p><b>Siguiente paso para este estudiante:</b> ' + esc(f.sugerencia) + '</p></details>';
+    return h;
+  }
+  function fechaCorta(ms){ var d = new Date(ms); return isNaN(d) ? '' : d.toLocaleDateString('es-EC', { day: 'numeric', month: 'short' }); }
+  function aFecha(s){ if (!s) return null; var d = new Date(String(s).replace(' (hora UTC)', 'Z').replace(' ', 'T')); return isNaN(d) ? null : d.getTime(); }
+
+  /* =================================================================
+     REPORTE DEL GRUPO
+     ================================================================= */
+  var ultimo = null;
+  function construirReporte(est){
+    var cont = document.getElementById('reporte');
+    if (!est || !est.length) { cont.hidden = true; return; }
+    var claves = [], etiq = {};
+    est.forEach(function(f){ Object.keys(f.tareas).forEach(function(k){ if (claves.indexOf(k) === -1) { claves.push(k); etiq[k] = f.tareas[k].etiqueta; } }); });
+    var N = est.length;
+    var resumen = claves.map(function(k){
+      var hechas = est.filter(function(f){ return f.tareas[k]; });
+      var nums = hechas.map(function(f){ return parseFloat(String(f.tareas[k].valor).replace(',', '.')); }).filter(function(x){ return !isNaN(x) && !/\//.test(String(x)); });
+      var prom = nums.length && hechas.every(function(f){ return !/\//.test(f.tareas[k].valor); }) ? nums.reduce(function(a, b){ return a + b; }, 0) / nums.length : null;
+      return { k: k, etiqueta: etiq[k], hechas: hechas.length, prom: prom };
+    });
+    var media = {};
+    DIM.forEach(function(d){
+      var xs = est.map(function(f){ return f.perfil[d[0]]; }).filter(function(v){ return v !== null; });
+      media[d[0]] = xs.length ? { v: xs.reduce(function(a, b){ return a + b; }, 0) / xs.length, n: xs.length } : null;
+    });
+    var conDatos = DIM.filter(function(d){ return media[d[0]]; }).sort(function(a, b){ return media[a[0]].v - media[b[0]].v; });
+    var relaciones = [];
+    claves.forEach(function(k){
+      DIM.forEach(function(d){
+        var si = est.filter(function(f){ return f.tareas[k] && f.perfil[d[0]] !== null; });
+        var no = est.filter(function(f){ return !f.tareas[k] && f.perfil[d[0]] !== null; });
+        if (si.length < 3 || no.length < 3) return;
+        var ms = si.reduce(function(a, f){ return a + f.perfil[d[0]]; }, 0) / si.length;
+        var mn = no.reduce(function(a, f){ return a + f.perfil[d[0]]; }, 0) / no.length;
+        if (Math.abs(ms - mn) >= 0.1) relaciones.push({ t: etiq[k], d: d[1], ms: ms, mn: mn, ns: si.length, nn: no.length });
+      });
+    });
+    relaciones.sort(function(a, b){ return Math.abs(b.ms - b.mn) - Math.abs(a.ms - a.mn); });
+    var sinNada = est.filter(function(f){ return !Object.keys(f.tareas).length; });
+
+    var h = '<h2>Reporte del grupo</h2>'
+      + '<p class="op">' + N + ' estudiantes · ' + (N - sinNada.length) + ' con trabajo en el aula'
+      + (sinNada.length ? ' · <b>' + sinNada.length + ' sin ningún trabajo en el aula</b>' : '') + '</p>'
+      + '<section class="ficha"><h3>Tareas</h3><ul class="notas">' + resumen.map(function(s){
+          return '<li><b>' + esc(s.etiqueta) + '</b>: ' + s.hechas + ' de ' + N + ' estudiantes'
+            + (s.prom !== null ? ' · promedio ' + fmtNota(s.prom) : '') + '</li>'; }).join('') + '</ul></section>'
+      + '<section class="ficha"><h3>Habilidades del grupo</h3><dl>' + DIM.map(function(d){
+          var m = media[d[0]];
+          return '<dt>' + d[1] + '</dt><dd>' + (m ? '<span class="barra"><i style="width:' + Math.round(m.v * 100) + '%"></i></span><span class="nivel '
+            + colorNivel(nivel(m.v)) + '">' + nivel(m.v) + '</span> <span class="op">(' + m.n + ' estudiantes)</span>' : '<span class="op">sin datos</span>') + '</dd>'; }).join('')
+      + '</dl>' + (conDatos.length ? '<p><b>Lo que más necesita el grupo:</b> ' + esc(conDatos[0][1]) + '. '
+          + esc(recomendar(conDatos[0][0], { flojas: [] })) + '</p>' : '')
+      + '<p class="op">Cómo se mide: ' + DIM.map(function(d){ return d[1].toLowerCase() + ', ' + d[2]; }).join('; ') + '.</p></section>'
+      + '<section class="ficha"><h3>¿Qué tareas acompañan mejores resultados?</h3>'
+      + (relaciones.length ? '<ul class="notas">' + relaciones.slice(0, 6).map(function(x){
+          return '<li>Quienes hicieron <b>' + esc(x.t) + '</b> tienen ' + esc(x.d.toLowerCase()) + ' de ' + Math.round(x.ms * 100) + ' % frente a '
+            + Math.round(x.mn * 100) + ' % de quienes no la hicieron (' + x.ns + ' y ' + x.nn + ' estudiantes).</li>'; }).join('') + '</ul>'
+        : '<p class="op">Todavía no hay datos suficientes: hacen falta al menos tres estudiantes que hicieron la tarea y tres que no.</p>')
+      + '<p class="op">Son relaciones observadas en este grupo, no prueban causa: quien hace más tareas suele ser también quien más estudia. '
+      + 'Sirven para preguntarse qué tarea vale la pena reforzar.</p></section>'
+      + '<div class="tabla-caja"><table><thead><tr><th>Estudiante</th>' + claves.map(function(k){ return '<th>' + esc(etiq[k]) + '</th>'; }).join('')
+      + DIM.map(function(d){ return '<th>' + d[1].split(' ')[0] + '</th>'; }).join('') + '<th>Siguiente paso</th></tr></thead><tbody>'
+      + est.map(function(f){
+          return '<tr><td>' + esc(f.nombre) + '</td>' + claves.map(function(k){ return '<td>' + (f.tareas[k] ? esc(f.tareas[k].valor) : '<span class="op">—</span>') + '</td>'; }).join('')
+            + DIM.map(function(d){ var n = nivel(f.perfil[d[0]]); return '<td>' + (n ? '<span class="nivel ' + colorNivel(n) + '">' + n + '</span>' : '<span class="op">—</span>') + '</td>'; }).join('')
+            + '<td class="sug">' + esc(f.sugerencia) + '</td></tr>'; }).join('')
+      + '</tbody></table></div>'
+      + '<div class="acciones"><button type="button" id="rep-csv">Descargar el reporte (Excel)</button>'
+      + '<button type="button" class="sec" id="rep-pdf">Descargar todas las fichas en un PDF</button></div>';
+    cont.innerHTML = h; cont.hidden = false;
+    ultimo = { est: est, claves: claves, etiq: etiq };
+    document.getElementById('rep-csv').addEventListener('click', reporteCsv);
+    document.getElementById('rep-pdf').addEventListener('click', function(){ pdfFichas(est); });
+  }
+
+  function reporteCsv(){
+    var u = ultimo; if (!u) return;
+    var colsM = [];
+    u.est.forEach(function(f){ f.moodle.forEach(function(c){ if (colsM.indexOf(c[0]) === -1) colsM.push(c[0]); }); });
+    var cab = ['Estudiante', 'Cedula'].concat(u.claves.map(function(k){ return u.etiq[k]; }))
+      .concat(DIM.map(function(d){ return d[1] + ' (%)'; })).concat(['Siguiente paso'])
+      .concat(colsM.map(function(c){ return 'Moodle: ' + c; }));
+    var filas = u.est.map(function(f){
+      return [f.nombre, f.cedula].concat(u.claves.map(function(k){ return f.tareas[k] ? f.tareas[k].valor : ''; }))
+        .concat(DIM.map(function(d){ return f.perfil[d[0]] === null ? '' : Math.round(f.perfil[d[0]] * 100); }))
+        .concat([f.sugerencia])
+        .concat(colsM.map(function(c){ var x = f.moodle.filter(function(m){ return m[0] === c; })[0]; return x ? x[1] : ''; }));
+    });
+    var txt = [cab].concat(filas).map(function(fl){
+      return fl.map(function(c){ return '"' + String(c).replace(/"/g, '""') + '"'; }).join(';');
+    }).join('\r\n');
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['﻿' + txt], { type: 'text/csv;charset=utf-8' }));
+    a.download = 'reporte_grupo_' + selloLocal(new Date()).replace(/[ :]/g, '-') + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
   }
 
   /* ---------- fichas de sustentacion ----------
@@ -753,7 +1151,9 @@ code{font-size:.8rem;overflow-wrap:anywhere}
   }
 
   function prepararFicha(items){
-    var f = { nombre: '', cedula: '', pareja: '', evidencias: [], senales: [], preguntas: [], dossier: [] };
+    var f = { nombre: '', cedula: '', pareja: '', evidencias: [], senales: [], preguntas: [], dossier: [],
+              tareas: {}, camino: [], moodle: [], m: { comp: [], arg: [], rig: [], apl: [] }, flojas: [] };
+    function hito(cuando, texto){ if (cuando) f.camino.push([cuando, fechaCorta(cuando) + ' · ' + texto]); }
     items.forEach(function(it){
       var r = it.r;
       if (!f.nombre || f.nombre.length < (r.nombre || '').length) f.nombre = r.nombre || f.nombre;
@@ -763,12 +1163,17 @@ code{font-size:.8rem;overflow-wrap:anywhere}
       if (it.tipo === 'auto-pase' || it.tipo === 'auto-codigo') {
         var nombreB = it.B.membrete.replace(/^.*?· (Bloque \d+)[^·]*·?\s*([^·]*).*$/, '$1 · $2').trim();
         var nota = it.B.sin_nota ? 'lectura formativa' : fmtNota(r.nota) + ' / ' + it.B.nota_maxima;
-        f.evidencias.push('Autocontrol ' + nombreB + ': ' + r.aciertos + ' de ' + it.B.total + ' aciertos · ' + nota
-          + (it.tipo === 'auto-pase' ? ' (con respuestas)' : ' (solo código)'));
+        f.evidencias.push('Autocontrol ' + nombreB + ': ' + r.aciertos + ' de ' + it.B.total + ' aciertos · ' + nota);
         f.dossier.push('AUTOCONTROL ' + nombreB + ': ' + r.aciertos + '/' + it.B.total + ' aciertos.');
+        f.tareas[it.B.bloque] = { etiqueta: 'Autocontrol ' + nombreB.split(' · ')[0],
+          valor: it.B.sin_nota ? r.aciertos + '/' + it.B.total : fmtNota(r.nota) };
+        f.m.comp.push(r.aciertos / it.B.total);
+        if (it.tipo === 'auto-pase') hito(r.inicio, 'Empezó el autocontrol ' + nombreB.split(' · ')[0]);
+        else hito(aFecha(r.fecha), 'Terminó el autocontrol ' + nombreB.split(' · ')[0] + ': ' + r.aciertos + ' de ' + it.B.total + ' aciertos');
         if (it.tipo === 'auto-pase') {
           var flojas = r.por.filter(function(s){ return s.hechos && s.aciertos / s.total < 0.5; })
             .sort(function(a, b){ return a.aciertos / a.total - b.aciertos / b.total; }).slice(0, 3);
+          flojas.forEach(function(s){ f.flojas.push(s.pestana.toLowerCase()); });
           if (flojas.length) f.senales.push('Secciones más flojas del autocontrol: ' + flojas.map(function(s){
             return s.pestana.toLowerCase() + ' (' + s.aciertos + '/' + s.total + ')'; }).join(', ') + '.');
           var porSec = {};
@@ -787,8 +1192,10 @@ code{font-size:.8rem;overflow-wrap:anywhere}
       }
 
       if (it.tipo === 'caso-respaldo' || it.tipo === 'caso-codigo') {
-        f.evidencias.push('Caso Harvard (' + (it.tipo === 'caso-respaldo' ? 'respaldo' : 'código del acta') + '): variante '
-          + r.variante + ' · control registral ' + r.aciertos + '/5');
+        f.evidencias.push('Caso Harvard: variante ' + r.variante + ' · control registral ' + r.aciertos + '/5');
+        f.tareas.CASO = { etiqueta: 'Caso Harvard', valor: 'control ' + r.aciertos + '/5' };
+        f.m.apl.push(r.aciertos / 5);
+        hito(r.guardado || aFecha(r.fecha), it.tipo === 'caso-respaldo' ? 'Trabajó el acta del Caso Harvard' : 'Emitió el acta del Caso Harvard (control registral ' + r.aciertos + '/5)');
         r.control.filter(function(q){ return q.marcada !== q.correcta; }).forEach(function(q){
           f.senales.push('Control registral: falló «' + q.rotulo + '».');
           f.preguntas.push({ q: 'Sobre ' + q.rotulo + ': ¿qué exige exactamente la norma y por qué?',
@@ -796,6 +1203,9 @@ code{font-size:.8rem;overflow-wrap:anywhere}
         });
         if (r.campos) {
           var texto = PARTES.map(function(pt){ return r.campos[pt[0]] || ''; }).join('\n');
+          f.m.apl.push(EJES.filter(function(e){ return e[1].test(texto); }).length / EJES.length);
+          f.m.rig.push(Math.min(1, citas(texto) / 6));
+          f.m.arg.push(fundamentacion(texto));
           EJES.forEach(function(e){
             if (!e[1].test(texto)) {
               f.senales.push('El acta no menciona ' + e[0] + '.');
@@ -823,7 +1233,12 @@ code{font-size:.8rem;overflow-wrap:anywhere}
       }
 
       if (it.tipo === 'hoja') {
-        f.evidencias.push(r.tarea + ' (respaldo): ' + r.completado + ' campos con respuesta');
+        f.evidencias.push(r.tarea + ': ' + r.completado + ' campos con respuesta');
+        f.tareas[r.pref] = { etiqueta: r.tarea, valor: r.completado };
+        hito(r.guardado, r.tarea + ': ' + r.completado + ' campos');
+        var conDonde = r.respuestas.filter(function(x){ return x[2] !== null && x[2] !== undefined && (x[1] || '').trim(); });
+        if (conDonde.length) f.m.rig.push(conDonde.filter(function(x){ return (x[2] || '').trim(); }).length / conDonde.length);
+        f.m.arg.push(fundamentacion(r.respuestas.map(function(x){ return x[1] || ''; }).join('. ')));
         var vacias = r.respuestas.filter(function(x){ return (x[1] || '').trim().length < 40; });
         vacias.slice(0, 2).forEach(function(x){
           f.senales.push(r.tarea + ': «' + x[0] + '» quedó casi en blanco.');
@@ -844,7 +1259,26 @@ code{font-size:.8rem;overflow-wrap:anywhere}
           return '- ' + x[0] + ': ' + (x[1] || '(en blanco)') + (x[2] !== null && x[2] !== undefined ? ' [Dónde consta: ' + (x[2] || 'no lo indicó') + ']' : ''); }).join('\n'));
       }
 
+      if (it.tipo === 'foro') {
+        f.evidencias.push(r.tarea + ' (acta): ' + r.intervenciones.length + ' intervenciones' + (r.postura ? ', postura «' + r.postura + '»' : ''));
+        if (!f.tareas[r.pref]) f.tareas[r.pref] = { etiqueta: r.tarea, valor: '✓' };
+        var todoForo = r.intervenciones.join(' ');
+        f.m.arg.push(fundamentacion(todoForo));
+        var af = afirmacion(todoForo);
+        if (af) f.preguntas.push({ cita: true, q: 'En el foro sostuvo: «' + af + '» ¿Lo sigue sosteniendo? Defiéndalo o corríjalo con un argumento nuevo.',
+          base: 'Afirmación propia en el ' + r.tarea.toLowerCase() + '.' });
+        f.dossier.push(r.tarea.toUpperCase() + ' (postura asignada: ' + (r.postura || '—') + '). Intervenciones del estudiante:\n'
+          + r.intervenciones.map(function(x, i){ return (i + 1) + '. ' + x; }).join('\n'));
+      }
+
       if (it.tipo === 'otro') {
+        var nt = r.campos.filter(function(c){ return c[0] === 'Nota sugerida'; })[0];
+        var cp = r.campos.filter(function(c){ return c[0] === 'Completado'; })[0];
+        f.tareas[r.pref] = { etiqueta: r.tarea, valor: nt ? nt[1] : (cp ? cp[1] : '✓') };
+        /* Un foro cerrado sin dictamen se registra con nota 0: no es una nota real. */
+        if (nt && parseFloat(nt[1]) > 0 && OTROS[r.pref] && OTROS[r.pref][2]) f.m.arg.push(Math.min(1, parseFloat(nt[1]) / OTROS[r.pref][2]));
+        var em = r.campos.filter(function(c){ return c[0] === 'Emitido'; })[0];
+        hito(em ? aFecha(em[1]) : null, r.tarea + ': ' + (nt ? 'nota sugerida ' + nt[1] : 'entregado'));
         f.evidencias.push(r.tarea + ' (código): ' + r.campos.map(function(c){ return c[0].toLowerCase() + ' ' + c[1]; }).join(' · '));
         f.dossier.push(r.tarea.toUpperCase() + ': ' + r.campos.map(function(c){ return c[0] + ' ' + c[1]; }).join(', '));
       }
@@ -854,6 +1288,7 @@ code{font-size:.8rem;overflow-wrap:anywhere}
     f.preguntas = f.preguntas.filter(function(q){ if (vistas[q.q]) return false; vistas[q.q] = 1; return true; });
     f.senales = f.senales.filter(function(s){ if (vistas[s]) return false; vistas[s] = 1; return true; });
     f.dossier = f.dossier.filter(function(s){ if (vistas[s]) return false; vistas[s] = 1; return true; });
+    f.evidencias = f.evidencias.filter(function(s){ if (vistas[s]) return false; vistas[s] = 1; return true; });
     return f;
   }
 
@@ -865,16 +1300,24 @@ code{font-size:.8rem;overflow-wrap:anywhere}
       if (!grupos[it.r.cedula]) { grupos[it.r.cedula] = []; orden.push(it.r.cedula); }
       grupos[it.r.cedula].push(it);
     });
-    if (!orden.length) { cont.hidden = true; return; }
-    cont.innerHTML = '<h2>Fichas de sustentación</h2><p>Una por estudiante, con todo lo que pegó de él o ella. '
-      + 'Las preguntas salen de su propio trabajo; para preguntas sobre lo que escribió, pegue sus respaldos, '
-      + 'no solo los códigos.</p>';
-    orden.forEach(function(ced){
-      var f = prepararFicha(grupos[ced]);
+    var estudiantes = orden.map(function(ced){ return prepararFicha(grupos[ced]); });
+    unirMoodle(estudiantes);
+    estudiantes.forEach(perfilar);
+    var fichas = estudiantes;
+    if (!fichas.length) { cont.hidden = true; return fichas; }
+    cont.innerHTML = '<h2>Fichas individuales</h2><p>Una por estudiante: su camino, su perfil, lo que dice '
+      + 'Moodle y preguntas para su sustentación que salen de su propio trabajo.</p>';
+    fichas.forEach(function(f){
+      var ced = f.cedula || '(sin cédula)';
       var s = document.createElement('section');
       s.className = 'ficha ficha-est';
-      s.innerHTML = '<span class="tipo">Ficha de sustentación</span><h3>' + esc(f.nombre) + ' · ' + esc(ced) + '</h3>'
+      s.innerHTML = '<span class="tipo">Ficha individual</span><h3>' + esc(f.nombre) + ' · ' + esc(ced) + '</h3>'
         + (f.pareja ? '<p class="op">Pareja de sustentación: ' + esc(f.pareja) + '</p>' : '')
+        + perfilHtml(f)
+        + (f.camino.length ? '<details><summary>Su camino (' + f.camino.length + ')</summary><ul class="notas"><li>'
+            + f.camino.map(function(c){ return esc(c[1]); }).join('</li><li>') + '</li></ul></details>' : '')
+        + (f.moodle.length ? '<details><summary>En Moodle (' + f.moodle.length + ')</summary><ul class="notas"><li>'
+            + f.moodle.map(function(c){ return esc(c[0]) + ': <b>' + esc(c[1]) + '</b>'; }).join('</li><li>') + '</li></ul></details>' : '')
         + '<details open><summary>Evidencias (' + f.evidencias.length + ')</summary><ul class="notas"><li>'
         + f.evidencias.map(esc).join('</li><li>') + '</li></ul></details>'
         + (f.senales.length ? '<details><summary>Señales para la sustentación (' + f.senales.length + ')</summary><ul class="notas"><li>'
@@ -888,10 +1331,11 @@ code{font-size:.8rem;overflow-wrap:anywhere}
         + '<div class="acciones"><button type="button" class="b-ia">Afinar las preguntas con IA</button>'
         + '<button type="button" class="sec b-pdf">Descargar la ficha en PDF</button></div>';
       s.querySelector('.b-ia').addEventListener('click', function(){ afinarConIA(f, s, this); });
-      s.querySelector('.b-pdf').addEventListener('click', function(){ pdfFicha(f); });
+      s.querySelector('.b-pdf').addEventListener('click', function(){ pdfFichas([f]); });
       cont.appendChild(s);
     });
     cont.hidden = false;
+    return fichas;
   }
 
   /* ---------- preguntas con IA ----------
@@ -929,10 +1373,17 @@ code{font-size:.8rem;overflow-wrap:anywhere}
       .then(function(){ boton.disabled = false; });
   }
 
-  function pdfFicha(f){
+  function pdfFichas(lista){
     var J = window.jspdf && window.jspdf.jsPDF;
     if (!J) { alert('No se pudo cargar el generador de PDF. Revise su conexión y recargue la página.'); return; }
     var doc = new J({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    lista.forEach(function(f, i){ if (i) doc.addPage(); dibujarFicha(doc, f); });
+    doc.save(lista.length === 1
+      ? 'Ficha_' + (f0(lista).cedula || 'estudiante') + '_' + f0(lista).nombre.replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40) + '.pdf'
+      : 'Fichas_individuales_' + selloLocal(new Date()).slice(0, 10) + '.pdf');
+  }
+  function f0(l){ return l[0]; }
+  function dibujarFicha(doc, f){
     var IZQ = 18, ANCHO = 174, y = 20;
     function salto(h){ if (y + h > 284) { doc.addPage(); y = 18; } }
     function linea(texto, tam, estilo, color, sangria, alto){
@@ -943,12 +1394,30 @@ code{font-size:.8rem;overflow-wrap:anywhere}
       });
     }
     linea(document.querySelector('.emisor').textContent.toUpperCase(), 8.5, 'normal', 90, 0, 4.5);
-    y += 2; linea('Ficha de sustentación', 18, 'titulo', 0, 0, 8);
-    linea(f.nombre + ' · Cédula ' + f.cedula + (f.pareja ? ' · Pareja: ' + f.pareja : ''), 10, 'bold', 0, 0, 5);
+    y += 2; linea('Ficha individual', 18, 'titulo', 0, 0, 8);
+    linea(f.nombre + (f.cedula ? ' · Cédula ' + f.cedula : '') + (f.pareja ? ' · Pareja: ' + f.pareja : ''), 10, 'bold', 0, 0, 5);
     linea('Preparada el ' + new Date().toLocaleString('es-EC') + ' con la mesa del docente. Uso del docente.', 8.5, 'normal', 90, 0, 4.5);
     y += 3; doc.setDrawColor(0); doc.setLineWidth(0.3); doc.line(IZQ, y, IZQ + ANCHO, y); y += 6;
+    if (f.perfil) {
+      linea('PERFIL DE HABILIDADES', 9, 'bold', 60, 0, 5);
+      DIM.forEach(function(d){
+        var v = f.perfil[d[0]];
+        linea('• ' + d[1] + ': ' + (v === null ? 'sin datos' : nivel(v) + ' (' + Math.round(v * 100) + ' %)'), 9.5, 'normal', 0, 2, 4.8);
+      });
+      linea('Siguiente paso: ' + f.sugerencia, 9.5, 'bold', 0, 2, 4.8);
+      y += 3;
+    }
+    if (f.camino.length) {
+      linea('SU CAMINO', 9, 'bold', 60, 0, 5);
+      f.camino.forEach(function(c){ linea('• ' + c[1], 9.5, 'normal', 0, 2, 4.8); });
+      y += 3;
+    }
     linea('EVIDENCIAS', 9, 'bold', 60, 0, 5);
     f.evidencias.forEach(function(e){ linea('• ' + e, 9.5, 'normal', 0, 2, 4.8); });
+    if (f.moodle.length) {
+      y += 3; linea('EN MOODLE', 9, 'bold', 60, 0, 5);
+      f.moodle.forEach(function(c){ linea('• ' + c[0] + ': ' + c[1], 9.5, 'normal', 0, 2, 4.8); });
+    }
     if (f.senales.length) {
       y += 3; linea('SEÑALES', 9, 'bold', 60, 0, 5);
       f.senales.forEach(function(e){ linea('• ' + e, 9.5, 'normal', 0, 2, 4.8); });
@@ -962,17 +1431,19 @@ code{font-size:.8rem;overflow-wrap:anywhere}
       y += 1;
     });
     if (f.ia) { y += 3; linea('PREGUNTAS AFINADAS CON IA', 9, 'bold', 60, 0, 5); linea(f.ia, 9.5, 'normal', 0, 0, 4.8); }
-    doc.save('Ficha_sustentacion_' + f.cedula + '_' + f.nombre.replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40) + '.pdf');
   }
 
   /* ---------- pintar ---------- */
+  /* De donde salio cada elemento: una linea pegada o un archivo de Moodle. */
+  function donde(n){ return typeof n === 'number' ? 'Línea ' + n : String(n); }
+
   function ficha(r, B, n){
     var div = document.createElement('section');
     div.className = 'ficha';
     var est = r.invalido ? '<span class="estado mal">No válido</span>'
             : r.problemas.length ? '<span class="estado av">Válido, con observaciones</span>'
             : '<span class="estado ok">Válido</span>';
-    var h = '<span class="tipo">Línea ' + n + ' · ' + (r.tipo === 'pase' ? 'Pase de avance' : 'Código de validación')
+    var h = '<span class="tipo">' + esc(donde(n)) + ' · ' + (r.tipo === 'pase' ? 'Pase de avance' : 'Código de validación')
           + (r.formato ? ' · ' + esc(r.formato) : '') + '</span>'
           + '<h2>' + est + esc(r.nombre || '—') + '</h2>';
     if (r.invalido) {
@@ -1019,6 +1490,8 @@ code{font-size:.8rem;overflow-wrap:anywhere}
       var h = linea.match(/PASEH\|[A-Za-z0-9+\/=]+\|[0-9A-Z]+/) || linea.match(/\bCH\|\d{6,}\|.*$/);
       if (h) return h[0].trim();
     }
+    var fo = linea.match(/PASEO\|[A-Z0-9]+\|[A-Za-z0-9+\/=]+\|[0-9A-Z]+/);
+    if (fo) return fo[0];
     var f = linea.match(/PASEF\|[^|\s]+\|[A-Za-z0-9+\/=]+\|[0-9A-Z]+/);
     if (f) return f[0];
     var otros = Object.keys(OTROS).join('|');
@@ -1031,19 +1504,22 @@ code{font-size:.8rem;overflow-wrap:anywhere}
     return m ? m[0].trim() : null;
   }
 
+  /* lote: lo que vino de archivos (elementos, tablas de Moodle y PDF sin datos). */
+  var lote = { items: [], moodle: [], vacios: [] };
   function revisar(){
     var res = document.getElementById('resultados'), msg = document.getElementById('mensaje');
     res.innerHTML = ''; filasCsv = []; document.getElementById('csv').disabled = true;
     var lineas = document.getElementById('entrada').value.split(/\r?\n/);
-    var tareas = [], ignoradas = 0, casos = [], todos = [];
+    var tareas = lote.items.slice(), ignoradas = 0, casos = [], todos = [];
     document.getElementById('fichas').hidden = true;
+    document.getElementById('reporte').hidden = true;
     lineas.forEach(function(l, i){
       if (!l.trim()) return;
       var t = extraer(l);
       if (!t) { ignoradas++; return; }
       tareas.push({ n: i + 1, texto: t });
     });
-    if (!tareas.length) {
+    if (!tareas.length && !lote.moodle.length) {
       msg.textContent = 'No encontré ningún pase ni código. Un pase empieza por PASE| y un código por '
         + Object.keys(FUENTES).join('|, ') + '|' + (CASO ? '; del Caso Harvard, PASEH| o CH|.' : '.');
       return;
@@ -1053,6 +1529,13 @@ code{font-size:.8rem;overflow-wrap:anywhere}
     tareas.forEach(function(t){
       cadena = cadena.then(function(){
         var pref = t.texto.split('|')[0];
+        if (pref === 'PASEO') {
+          return leerPaseForo(t.texto).then(function(r){
+            r.n = t.n;
+            todos.push({ tipo: 'foro', r: r });
+            res.appendChild(fichaOtro(r, t.n));
+          });
+        }
         if (pref === 'PASEF' || OTROS[pref]) {
           var prom = pref === 'PASEF' ? leerPaseHoja(t.texto) : cargarOtro(pref).then(function(O){ return leerCodigoOtro(t.texto, O); });
           return prom.then(function(r){
@@ -1065,7 +1548,7 @@ code{font-size:.8rem;overflow-wrap:anywhere}
               (r.invalido ? [r.invalido] : r.problemas).join(' / ')]);
           }, function(e){
             var d = document.createElement('section'); d.className = 'ficha';
-            d.innerHTML = '<span class="tipo">Línea ' + t.n + '</span><h2><span class="estado mal">Error</span></h2>'
+            d.innerHTML = '<span class="tipo">' + esc(donde(t.n)) + '</span><h2><span class="estado mal">Error</span></h2>'
               + '<ul class="notas"><li>' + esc(e.message) + '</li></ul>';
             res.appendChild(d);
           });
@@ -1082,7 +1565,7 @@ code{font-size:.8rem;overflow-wrap:anywhere}
               (r.invalido ? [r.invalido] : r.problemas).join(' / ')]);
           }, function(e){
             var d = document.createElement('section'); d.className = 'ficha';
-            d.innerHTML = '<span class="tipo">Línea ' + t.n + '</span><h2><span class="estado mal">Error</span></h2>'
+            d.innerHTML = '<span class="tipo">' + esc(donde(t.n)) + '</span><h2><span class="estado mal">Error</span></h2>'
               + '<ul class="notas"><li>' + esc(e.message) + '</li></ul>';
             res.appendChild(d);
           });
@@ -1098,7 +1581,7 @@ code{font-size:.8rem;overflow-wrap:anywhere}
             (r.invalido ? [r.invalido] : r.problemas).join(' / ')]);
         }, function(e){
           var d = document.createElement('section'); d.className = 'ficha';
-          d.innerHTML = '<span class="tipo">Línea ' + t.n + '</span><h2><span class="estado mal">Error</span></h2>'
+          d.innerHTML = '<span class="tipo">' + esc(donde(t.n)) + '</span><h2><span class="estado mal">Error</span></h2>'
             + '<ul class="notas"><li>' + esc(e.message) + '</li></ul>';
           res.appendChild(d);
         });
@@ -1106,8 +1589,14 @@ code{font-size:.8rem;overflow-wrap:anywhere}
     });
     cadena.then(function(){
       cruzarCasos(casos);
-      construirFichas(todos);
+      var est = construirFichas(todos);
+      construirReporte(est);
+      var det = document.getElementById('detalle-archivos');
+      det.hidden = !tareas.length;
+      document.getElementById('detalle-titulo').textContent = 'Detalle de cada entrega (' + tareas.length + ')';
       msg.textContent = tareas.length + (tareas.length === 1 ? ' elemento revisado' : ' elementos revisados')
+        + (lote.moodle.length ? ' · ' + lote.moodle.length + ' reporte(s) de Moodle' : '')
+        + (lote.vacios.length ? ' · ' + lote.vacios.length + ' PDF sin datos legibles' : '')
         + (ignoradas ? '; ' + ignoradas + ' línea(s) sin pase ni código, ignoradas.' : '.');
       document.getElementById('csv').disabled = !filasCsv.length;
     });
@@ -1127,6 +1616,9 @@ code{font-size:.8rem;overflow-wrap:anywhere}
   document.getElementById('revisar').addEventListener('click', revisar);
   document.getElementById('csv').addEventListener('click', csv);
   document.getElementById('limpiar').addEventListener('click', function(){
+    lote = { items: [], moodle: [], vacios: [] };
+    document.getElementById('reporte').hidden = true;
+    document.getElementById('detalle-archivos').hidden = true;
     document.getElementById('entrada').value = '';
     document.getElementById('resultados').innerHTML = '';
     document.getElementById('mensaje').textContent = '';

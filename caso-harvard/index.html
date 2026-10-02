@@ -1025,7 +1025,10 @@ function descargarPDF() {
 
   // Un respiro para que el navegador recomponga antes de fotografiar.
   setTimeout(function () {
-    html2pdf().set(opt).from(element).save()
+    // El acta lleva dentro su codigo y el respaldo, para la mesa del docente.
+    html2pdf().set(opt).from(element).toPdf().get('pdf').then(function (pdf) {
+      pdf.setProperties({ title: 'Acta Caso Harvard', creator: 'Aula', keywords: codigoActa() + '\n' + respaldo() });
+    }).save()
       .then(restaurar)
       .catch(function () {
         restaurar();

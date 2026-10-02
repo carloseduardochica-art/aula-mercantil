@@ -754,6 +754,19 @@ bEnt.addEventListener('click', () => {
 /* ---------------------------------------------------------------------
    HILO
    --------------------------------------------------------------------- */
+/* Lo que la mesa del docente lee del acta: el codigo y las intervenciones del
+   estudiante, firmados con la misma sal del codigo. */
+function paseForo(){
+  const cod = (document.getElementById('txt-codigo') || {}).textContent || '';
+  const datos = { ced: alumno.ced, nom: alumno.nom,
+                  postura: alumno.postura ? alumno.postura.nombre : '',
+                  intervenciones: registro.filter(t => t.quien !== 'ia').map(t => t.texto) };
+  const bytes = new TextEncoder().encode(JSON.stringify(datos));
+  let bin = ''; for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  const cuerpo = 'PASEO|' + BLOQUE + '|' + btoa(bin);
+  return cod.trim() + '\n' + cuerpo + '|' + base36(djb2(SAL + cuerpo));
+}
+
 function pinta(quien, texto){
   const hilo = document.createElement('div');
   hilo.className = 'turno ' + (quien === 'ia' ? 'ia' : 'yo');
@@ -1068,7 +1081,11 @@ function descargaActa(){
       html2canvas: { scale:2, useCORS:true, scrollX:0, scrollY:0 },
       jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
       pagebreak: { mode:['avoid-all','css'] }
-    }).from(acta).save().then(() => {
+    }).from(acta).toPdf().get('pdf').then(pdf => {
+      // El acta lleva dentro su codigo y lo que escribio el estudiante, para
+      // que la mesa del docente lo lea soltando el PDF.
+      pdf.setProperties({ title: 'Acta del foro', creator: 'Aula', keywords: paseForo() });
+    }).save().then(() => {
       restaurar();
       boton.disabled = false; boton.textContent = 'Descargar el acta en PDF';
     }).catch(() => {

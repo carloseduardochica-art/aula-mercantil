@@ -4893,6 +4893,10 @@ document.head.appendChild(css);
     parrafo('Este documento lo genera el propio material de lectura. El código de validación '
       + 'permite al docente comprobar que los datos no han sido alterados.', 8.5, 'normal', 90, 4.2);
 
+    /* El PDF lleva dentro el codigo y el pase: el docente los lee soltando el
+       PDF en la mesa del docente, sin que el estudiante copie nada. */
+    doc.setProperties({ title: 'Constancia de lectura · ' + BANCO.titulo, creator: 'Aula',
+                        keywords: c.codigo + '\n' + serializar() });
     var nombre = 'Constancia_' + BANCO.bloque + '_' + soloDigitos(estado.cedula) + '_'
       + normNombre(estado.nombre).replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40)
       + '.pdf';
