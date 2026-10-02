@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Mesa del docente · Derecho Mercantil y Societario</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --fondo:#f6f6f4; --hoja:#ffffff; --tinta:#17181a; --suave:#55585e; --linea:#d9d9d4;
+  --acento:#1f4e79; --bien:#1e6b3a; --bien-fondo:#e7f3ea; --mal:#8a2b2b; --mal-fondo:#f7e6e6;
+  --aviso:#7a5a00; --aviso-fondo:#fbf2d9;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --fondo:#141517; --hoja:#1d1f22; --tinta:#ececea; --suave:#a5a8ad; --linea:#33363b;
+    --acento:#8db8e6; --bien:#8fd3a5; --bien-fondo:#1c2e22; --mal:#f0a3a3; --mal-fondo:#3a2222;
+    --aviso:#ecc76a; --aviso-fondo:#33290f;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fondo);color:var(--tinta);
+  font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:920px;margin:0 auto;padding:28px 16px 60px}
+h1{font-family:Georgia,"Times New Roman",serif;font-size:1.7rem;margin:.1em 0 .2em}
+.emisor{margin:0;color:var(--suave);font-size:.8rem;letter-spacing:.08em;text-transform:uppercase}
+.entrada,.ficha{background:var(--hoja);border:1px solid var(--linea);border-radius:10px;padding:16px;margin-top:18px}
+.entrada p{margin:.2em 0 .8em;color:var(--suave);font-size:.95rem}
+textarea{width:100%;min-height:150px;padding:10px;border:1px solid var(--linea);border-radius:8px;
+  background:var(--fondo);color:var(--tinta);font:13px/1.45 ui-monospace,Consolas,monospace;resize:vertical}
+.acciones{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+button{font:inherit;font-size:.92rem;padding:.55em 1em;border-radius:8px;cursor:pointer;
+  border:1px solid var(--acento);background:var(--acento);color:var(--hoja)}
+button.sec{background:transparent;color:var(--acento)}
+button:disabled{opacity:.5;cursor:default}
+.estado{display:inline-block;font-size:.8rem;font-weight:600;padding:.15em .6em;border-radius:99px;margin-right:6px}
+.ok{background:var(--bien-fondo);color:var(--bien)}
+.mal{background:var(--mal-fondo);color:var(--mal)}
+.av{background:var(--aviso-fondo);color:var(--aviso)}
+.ficha h2{font-size:1.1rem;margin:.4em 0 .1em}
+.ficha .tipo{font-size:.8rem;color:var(--suave)}
+dl{display:grid;grid-template-columns:max-content 1fr;gap:.2em 1em;margin:.8em 0;font-size:.93rem}
+dt{color:var(--suave)} dd{margin:0;overflow-wrap:anywhere}
+ul.notas{margin:.4em 0;padding-left:1.2em;font-size:.9rem}
+details{margin-top:.6em;font-size:.9rem}
+table{border-collapse:collapse;width:100%;margin-top:.5em}
+th,td{border-bottom:1px solid var(--linea);padding:.3em .4em;text-align:left}
+th{color:var(--suave);font-weight:500;font-size:.8rem;text-transform:uppercase;letter-spacing:.04em}
+code{font-size:.8rem;overflow-wrap:anywhere}
+.mensaje{color:var(--suave);margin-top:14px}
+.limite{font-size:.85rem;color:var(--suave);margin-top:28px;border-top:1px solid var(--linea);padding-top:12px}
+@media (max-width:560px){ dl{grid-template-columns:1fr} dt{margin-top:.4em} }
+</style>
+</head>
+<body>
+<main>
+  <p class="emisor">Derecho Mercantil y Societario · Uso del docente</p>
+  <h1>Mesa del docente</h1>
+
+  <section class="entrada">
+    <p>Pegue aquí, uno por línea, los <b>pases de avance</b> (empiezan por <code>PASE|M1|</code>)
+      o los <b>códigos de validación</b> de las constancias (empiezan por <code>M1|</code> o
+      <code>M2|</code>). Puede pegarlos con texto alrededor, por ejemplo copiados de un mensaje.</p>
+    <textarea id="entrada" spellcheck="false" aria-label="Pases o códigos, uno por línea"></textarea>
+    <div class="acciones">
+      <button type="button" id="revisar">Revisar</button>
+      <button type="button" class="sec" id="csv" disabled>Descargar resumen (CSV)</button>
+      <button type="button" class="sec" id="limpiar">Limpiar</button>
+    </div>
+  </section>
+
+  <p class="mensaje" id="mensaje" role="status"></p>
+  <div id="resultados"></div>
+
+  <p class="limite"><b>Qué hace cada cosa.</b> Con un <b>pase</b>, la página recalcula la nota
+    a partir de las respuestas, igual que el autocontrol, y emite la constancia en PDF marcada
+    como regenerada por el docente. El pase no guarda la hora de cada respuesta, así que esa
+    constancia no informa plazo ni tiempo de trabajo. Con un <b>código</b>, la página comprueba
+    que la firma corresponde a los datos y que la nota cuadra con los aciertos. La firma detecta
+    un código retocado a mano, pero no es criptográfica: si hay dudas sobre una nota, pida el
+    pase y recalcúlela. Esta página no guarda ni envía nada; todo ocurre en este navegador.</p>
+</main>
+
+<script>
+(function(){
+  var FUENTES = { M1: '../autocontrol-b1/', M2: '../autocontrol-b2/' };
+  var bancos = {};               // bloque -> promesa del banco
+  var filasCsv = [];
+
+  /* ---------- utilidades, las mismas del autocontrol ---------- */
+  function djb2(s){
+    var h = 5381;
+    for (var i = 0; i < s.length; i++) h = ((h * 33) + s.charCodeAt(i)) >>> 0;
+    return h;
+  }
+  function b36(n){ return n.toString(36).toUpperCase(); }
+  function soloDigitos(s){ return (s || '').replace(/\D/g, ''); }
+  function grupoDe(c){ return (parseInt(soloDigitos(c).slice(-1), 10) % 2 === 0) ? 'pares' : 'impares'; }
+  function cedulaValida(c){
+    c = soloDigitos(c);
+    if (c.length !== 10) return false;
+    var prov = parseInt(c.slice(0, 2), 10);
+    if (!((prov >= 1 && prov <= 24) || prov === 30)) return false;
+    if (parseInt(c[2], 10) > 5) return false;
+    var suma = 0;
+    for (var i = 0; i < 9; i++) {
+      var d = parseInt(c[i], 10) * (i % 2 === 0 ? 2 : 1);
+      if (d > 9) d -= 9;
+      suma += d;
+    }
+    return (10 - (suma % 10)) % 10 === parseInt(c[9], 10);
+  }
+  function fmtNota(n){ return String(Math.round(n * 2) / 2); }
+  function esc(s){
+    return String(s).replace(/[&<>"]/g, function(c){
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c];
+    });
+  }
+  function selloLocal(d){
+    var p = function(n){ return (n < 10 ? '0' : '') + n; };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate())
+         + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
+  /* ---------- el banco se lee del autocontrol publicado ----------
+     Asi esta pagina no guarda una copia de las preguntas que pueda quedarse
+     vieja: si el autocontrol cambia, la mesa del docente cambia con el. */
+  function banco(bloque){
+    if (!FUENTES[bloque]) return Promise.reject(new Error('Bloque desconocido: ' + bloque));
+    if (!bancos[bloque]) {
+      bancos[bloque] = fetch(FUENTES[bloque], { cache: 'no-cache' })
+        .then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+        .then(function(html){
+          var m = html.match(/<script type="application\/json" id="datos-control">([\s\S]*?)<\/script>/);
+          if (!m) throw new Error('No se encontró el banco de preguntas en el autocontrol.');
+          var B = JSON.parse(m[1]);
+          var c = html.match(/var CIERRE_TAREA = '([^']*)'/);
+          B.cierreEfectivo = c ? (c[1] || null) : (B.cierre || null);
+          B.orden = []; B.total = 0;
+          B.secciones.forEach(function(s){
+            s.apartados.forEach(function(a){ B.orden.push(a.id); });
+            B.total += s.apartados.length;
+          });
+          return B;
+        });
+      bancos[bloque].catch(function(){ delete bancos[bloque]; });
+    }
+    return bancos[bloque];
+  }
+
+  function mediaPuntoArriba(n, tope){
+    var r = Math.ceil(n * 2 - 1e-9) / 2;
+    return Math.min(tope, Math.max(0, r));
+  }
+  function notaDe(B, aciertos, bruto){
+    var n = (B.modo_nota === 'proporcional')
+      ? (B.total ? aciertos / B.total * B.nota_maxima : 0)
+      : Math.min(B.nota_maxima, bruto);
+    return mediaPuntoArriba(n, B.nota_maxima);
+  }
+
+  /* ---------- pase de avance ---------- */
+  function leerPase(texto, B){
+    var p = texto.split('|');
+    var r = { tipo: 'pase', texto: texto, problemas: [] };
+    if (p.length !== 7) { r.invalido = 'El pase no tiene sus 7 partes: está cortado o tiene saltos de línea en medio.'; return r; }
+    r.bloque = p[1]; r.cedula = p[2]; r.nombre = p[3];
+    if (b36(djb2(B.sal + p.slice(0, 6).join('|'))) !== p[6]) {
+      r.invalido = 'La firma no corresponde: el pase se copió a medias o fue modificado.'; return r;
+    }
+    if (p[4].length !== B.orden.length) {
+      r.invalido = 'El pase es de otra versión del cuestionario (' + p[4].length
+        + ' apartados; el actual tiene ' + B.orden.length + ').'; return r;
+    }
+    if (!cedulaValida(r.cedula)) r.problemas.push('La cédula no supera el dígito verificador.');
+    r.inicio = parseInt(p[5], 10) * 60000;
+    var grupo = grupoDe(r.cedula), pos = 0, hechos = 0, aciertos = 0, bruto = 0;
+    r.por = B.secciones.map(function(s){
+      var bien = 0, hechas = 0;
+      s.apartados.forEach(function(a){
+        var m = p[4][pos++];
+        if (m === '-') return;
+        hechas++;
+        var q = B.indice[a.id] && B.indice[a.id].grupos[grupo];
+        if (q && djb2(B.sal + a.id + grupo + q.o[parseInt(m, 10)]) === q.h) bien++;
+      });
+      var n = s.apartados.length, pts = n ? bien * B.puntos_seccion / n : 0;
+      hechos += hechas; aciertos += bien; bruto += pts;
+      return { pestana: s.pestana, total: n, hechos: hechas, aciertos: bien, puntos: pts };
+    });
+    r.hechos = hechos; r.aciertos = aciertos; r.bruto = bruto;
+    r.nota = notaDe(B, aciertos, bruto);
+    r.completo = hechos === B.total;
+    if (!r.completo) r.problemas.push('Incompleto: ' + hechos + ' de ' + B.total + ' apartados respondidos.');
+    return r;
+  }
+
+  /* ---------- codigo de validacion ----------
+     Tres formatos: el clasico (8 campos y firma), el ampliado con intentos y
+     plazo (10 campos y firma) y el que emite esta mesa (marca DOC). */
+  function leerCodigo(texto, B){
+    var p = texto.split('|');
+    var r = { tipo: 'codigo', texto: texto, problemas: [] };
+    if (p.length !== 9 && p.length !== 11) {
+      r.invalido = 'El código no tiene el número de partes esperado: está cortado o incompleto.'; return r;
+    }
+    var cuerpo = p.slice(0, -1).join('|');
+    r.firmaOk = b36(djb2(B.sal + cuerpo)) === p[p.length - 1];
+    r.bloque = p[0]; r.cedula = p[1]; r.nombre = p[2];
+    var hT = p[3].split('/');
+    r.hechos = parseInt(hT[0], 10);
+    r.aciertos = parseInt(p[4], 10);
+    r.nota = parseFloat(p[5]);
+    if (p.length === 9 && p[6] === 'DOC') {
+      r.formato = 'Emitido desde la mesa del docente'; r.fecha = p[7];
+    } else if (p.length === 9) {
+      r.formato = 'Clásico'; r.minutos = parseInt(p[6], 10); r.fecha = p[7] + ' (hora UTC)';
+    } else {
+      r.formato = 'Con intentos y plazo';
+      r.minutos = parseInt(p[6], 10); r.intento = p[7].replace('I', ''); r.fecha = p[8];
+      r.fuera = p[9] === 'FP';
+    }
+    if (!r.firmaOk) r.invalido = 'La firma no corresponde a los datos: el código fue modificado o copiado con errores.';
+    if (!cedulaValida(r.cedula)) r.problemas.push('La cédula no supera el dígito verificador.');
+    if (r.hechos !== B.total) r.problemas.push('Declara ' + p[3] + ' apartados; el bloque tiene ' + B.total + '.');
+    if (B.modo_nota === 'proporcional' && Math.abs(notaDe(B, r.aciertos, 0) - r.nota) > 1e-6) {
+      r.problemas.push('La nota (' + fmtNota(r.nota) + ') no cuadra con ' + r.aciertos
+        + ' aciertos: correspondería ' + fmtNota(notaDe(B, r.aciertos, 0)) + '.');
+    }
+    if (r.fuera) r.problemas.push('Marcado FUERA DE PLAZO por el reloj del aparato del estudiante.');
+    return r;
+  }
+
+  function codigoDocente(r, B){
+    var cuerpo = [r.bloque, soloDigitos(r.cedula), r.nombre, r.hechos + '/' + B.total,
+                  r.aciertos + 'A', r.nota.toFixed(2) + 'N', 'DOC', selloLocal(new Date())].join('|');
+    return cuerpo + '|' + b36(djb2(B.sal + cuerpo));
+  }
+
+  /* ---------- constancia en PDF, con el formato de la del estudiante ---------- */
+  function pdf(r, B){
+    var J = window.jspdf && window.jspdf.jsPDF;
+    if (!J) { alert('No se pudo cargar el generador de PDF. Revise su conexión y recargue la página.'); return; }
+    var doc = new J({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    var IZQ = 20, DER = 190, ANCHO = DER - IZQ, y = 22, ahora = new Date();
+    function salto(h){ if (y + h > 282) { doc.addPage(); y = 20; } }
+
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(90);
+    doc.text(B.institucion.toUpperCase(), 105, y, { align: 'center' }); y += 10;
+    doc.setFont('times', 'bold'); doc.setFontSize(21); doc.setTextColor(0);
+    doc.text('Constancia de lectura', 105, y, { align: 'center' }); y += 7;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(70);
+    doc.splitTextToSize(B.titulo + ' · ' + B.membrete, ANCHO).forEach(function(l){
+      doc.text(l, 105, y, { align: 'center' }); y += 4.5;
+    });
+    doc.text('Actividad autónoma — control de lectura del bloque', 105, y, { align: 'center' });
+    y += 4; doc.setDrawColor(0); doc.setLineWidth(0.4); doc.line(IZQ, y, DER, y); y += 8;
+
+    var datos = [
+      ['Estudiante', r.nombre],
+      ['Cédula', soloDigitos(r.cedula) + '  (cuestionario de cédulas ' + grupoDe(r.cedula) + ')'],
+      ['Emitida', ahora.toLocaleDateString('es-EC') + ' a las ' + ahora.toLocaleTimeString('es-EC')],
+      ['Origen', 'Regenerada por el docente a partir del pase de avance del estudiante'],
+      ['Inicio del trabajo', r.inicio ? new Date(r.inicio).toLocaleString('es-EC') + ' (aprox.)' : 'No consta'],
+      ['Plazo y tiempo', 'No constan en el pase de avance']
+    ];
+    if (!r.completo) datos.push(['Estado', 'INCOMPLETO: ' + r.hechos + ' de ' + B.total + ' apartados']);
+    datos.forEach(function(d){
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(90);
+      doc.text(d[0], IZQ, y); doc.setTextColor(0);
+      doc.splitTextToSize(d[1], ANCHO - 42).forEach(function(l){ doc.text(l, IZQ + 42, y); y += 5; });
+      y += 1;
+    });
+    y += 4;
+
+    var COL = [IZQ, IZQ + 10, IZQ + 128, IZQ + 152];
+    function fila(celdas, negrita, fondo){
+      salto(7);
+      if (fondo) { doc.setFillColor(fondo); doc.rect(IZQ, y - 4, ANCHO, 5.6, 'F'); }
+      doc.setFont('helvetica', negrita ? 'bold' : 'normal'); doc.setFontSize(9.5); doc.setTextColor(0);
+      celdas.forEach(function(c, i){
+        doc.text(doc.splitTextToSize(c, (COL[i + 1] || DER) - COL[i] - 2)[0] || '', COL[i] + 1, y);
+      });
+      doc.setDrawColor(190); doc.setLineWidth(0.2); doc.line(IZQ, y + 1.6, DER, y + 1.6);
+      y += 5.6;
+    }
+    fila(['#', 'Sección', 'Aciertos', 'Puntos'], true, 235);
+    r.por.forEach(function(s, i){
+      fila([String(i + 1), s.pestana, s.aciertos + ' / ' + s.total, s.puntos.toFixed(2)], false, null);
+    });
+    fila(['', 'Total', r.aciertos + ' / ' + B.total, r.bruto.toFixed(2)], true, 246);
+
+    y += 6; salto(20);
+    doc.setDrawColor(0); doc.setLineWidth(0.6); doc.rect(IZQ + 30, y - 6, ANCHO - 60, 13);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(14); doc.setTextColor(0);
+    doc.text('Nota final  ' + fmtNota(r.nota) + ' / ' + B.nota_maxima, 105, y + 2.5, { align: 'center' });
+    y += 15;
+
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(60);
+    doc.text('Código de validación', IZQ, y); y += 5;
+    doc.setFont('courier', 'normal'); doc.setTextColor(0);
+    var cod = doc.splitTextToSize(codigoDocente(r, B), ANCHO - 6);
+    salto(cod.length * 4.6 + 6);
+    doc.setDrawColor(140); doc.setLineWidth(0.3); doc.setLineDashPattern([1.2, 1], 0);
+    doc.rect(IZQ, y - 3, ANCHO, cod.length * 4.6 + 3.5); doc.setLineDashPattern([], 0);
+    cod.forEach(function(l){ doc.text(l, IZQ + 3, y + 1.5); y += 4.6; });
+    y += 8;
+
+    doc.setDrawColor(200); doc.setLineWidth(0.2); salto(12); doc.line(IZQ, y - 4, DER, y - 4);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(90);
+    doc.splitTextToSize('Constancia emitida por el docente con la mesa del docente del aula, a partir '
+      + 'del pase de avance que conserva las respuestas del estudiante. La nota se recalcula con el '
+      + 'mismo procedimiento que el autocontrol.', ANCHO).forEach(function(l){ doc.text(l, IZQ, y); y += 4.2; });
+
+    doc.save('Constancia_' + r.bloque + '_' + soloDigitos(r.cedula) + '_'
+      + r.nombre.replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40) + '_docente.pdf');
+  }
+
+  /* ---------- pintar ---------- */
+  function ficha(r, B, n){
+    var div = document.createElement('section');
+    div.className = 'ficha';
+    var est = r.invalido ? '<span class="estado mal">No válido</span>'
+            : r.problemas.length ? '<span class="estado av">Válido, con observaciones</span>'
+            : '<span class="estado ok">Válido</span>';
+    var h = '<span class="tipo">Línea ' + n + ' · ' + (r.tipo === 'pase' ? 'Pase de avance' : 'Código de validación')
+          + (r.formato ? ' · ' + esc(r.formato) : '') + '</span>'
+          + '<h2>' + est + esc(r.nombre || '—') + '</h2>';
+    if (r.invalido) {
+      h += '<ul class="notas"><li>' + esc(r.invalido) + '</li></ul>';
+    } else {
+      h += '<dl><dt>Cédula</dt><dd>' + esc(r.cedula) + ' (cédulas ' + grupoDe(r.cedula) + ')</dd>'
+        + '<dt>Bloque</dt><dd>' + esc(B.membrete) + '</dd>'
+        + '<dt>Aciertos</dt><dd>' + r.aciertos + ' de ' + B.total + '</dd>'
+        + '<dt>Nota</dt><dd><b>' + fmtNota(r.nota) + ' / ' + B.nota_maxima + '</b></dd>';
+      if (r.tipo === 'codigo') {
+        h += '<dt>Emitida</dt><dd>' + esc(r.fecha) + '</dd>';
+        if (r.intento) h += '<dt>Intento informado</dt><dd>' + esc(r.intento) + '</dd>';
+        if (r.minutos !== undefined) h += '<dt>Tiempo de trabajo</dt><dd>' + r.minutos + ' minutos</dd>';
+      } else if (r.inicio) {
+        h += '<dt>Empezó</dt><dd>' + esc(new Date(r.inicio).toLocaleString('es-EC')) + '</dd>';
+      }
+      h += '</dl>';
+      if (r.problemas.length) h += '<ul class="notas"><li>' + r.problemas.map(esc).join('</li><li>') + '</li></ul>';
+      if (r.por) {
+        h += '<details><summary>Desglose por sección</summary><table><thead><tr><th>#</th><th>Sección</th>'
+          + '<th>Respondidas</th><th>Aciertos</th></tr></thead><tbody>'
+          + r.por.map(function(s, i){
+              return '<tr><td>' + (i + 1) + '</td><td>' + esc(s.pestana) + '</td><td>' + s.hechos + '/' + s.total
+                + '</td><td>' + s.aciertos + '</td></tr>';
+            }).join('') + '</tbody></table></details>'
+          + '<div class="acciones"><button type="button" class="pdf">Descargar su constancia en PDF</button></div>';
+      }
+    }
+    div.innerHTML = h;
+    var b = div.querySelector('.pdf');
+    if (b) b.addEventListener('click', function(){ pdf(r, B); });
+    return div;
+  }
+
+  /* Del texto pegado se toma desde donde empieza el pase o el codigo hasta el
+     final de la linea: asi sirve pegar «Marisol: PASE|M1|...» tal cual llega. */
+  function extraer(linea){
+    var m = linea.match(/PASE\|M\d\|.*$/) || linea.match(/\bM\d\|\d{6,}\|.*$/);
+    return m ? m[0].trim() : null;
+  }
+
+  function revisar(){
+    var res = document.getElementById('resultados'), msg = document.getElementById('mensaje');
+    res.innerHTML = ''; filasCsv = []; document.getElementById('csv').disabled = true;
+    var lineas = document.getElementById('entrada').value.split(/\r?\n/);
+    var tareas = [], ignoradas = 0;
+    lineas.forEach(function(l, i){
+      if (!l.trim()) return;
+      var t = extraer(l);
+      if (!t) { ignoradas++; return; }
+      tareas.push({ n: i + 1, texto: t });
+    });
+    if (!tareas.length) {
+      msg.textContent = 'No encontré ningún pase ni código. Un pase empieza por PASE|M1| y un código por M1| o M2|.';
+      return;
+    }
+    msg.textContent = 'Leyendo el banco de preguntas…';
+    var cadena = Promise.resolve();
+    tareas.forEach(function(t){
+      cadena = cadena.then(function(){
+        var bloque = t.texto.indexOf('PASE|') === 0 ? t.texto.split('|')[1] : t.texto.split('|')[0];
+        return banco(bloque).then(function(B){
+          var r = t.texto.indexOf('PASE|') === 0 ? leerPase(t.texto, B) : leerCodigo(t.texto, B);
+          res.appendChild(ficha(r, B, t.n));
+          filasCsv.push([r.nombre || '', r.cedula || '', bloque, r.tipo,
+            r.invalido ? 'NO VALIDO' : (r.problemas.length ? 'CON OBSERVACIONES' : 'VALIDO'),
+            r.invalido ? '' : fmtNota(r.nota), r.invalido ? '' : r.aciertos,
+            (r.invalido ? [r.invalido] : r.problemas).join(' / ')]);
+        }, function(e){
+          var d = document.createElement('section'); d.className = 'ficha';
+          d.innerHTML = '<span class="tipo">Línea ' + t.n + '</span><h2><span class="estado mal">Error</span></h2>'
+            + '<ul class="notas"><li>' + esc(e.message) + '</li></ul>';
+          res.appendChild(d);
+        });
+      });
+    });
+    cadena.then(function(){
+      msg.textContent = tareas.length + (tareas.length === 1 ? ' elemento revisado' : ' elementos revisados')
+        + (ignoradas ? '; ' + ignoradas + ' línea(s) sin pase ni código, ignoradas.' : '.');
+      document.getElementById('csv').disabled = !filasCsv.length;
+    });
+  }
+
+  function csv(){
+    var cab = ['Nombre', 'Cedula', 'Bloque', 'Tipo', 'Estado', 'Nota', 'Aciertos', 'Observaciones'];
+    var txt = [cab].concat(filasCsv).map(function(f){
+      return f.map(function(c){ return '"' + String(c).replace(/"/g, '""') + '"'; }).join(';');
+    }).join('\r\n');
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['﻿' + txt], { type: 'text/csv;charset=utf-8' }));
+    a.download = 'revision_constancias_' + selloLocal(new Date()).replace(/[ :]/g, '-') + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+
+  document.getElementById('revisar').addEventListener('click', revisar);
+  document.getElementById('csv').addEventListener('click', csv);
+  document.getElementById('limpiar').addEventListener('click', function(){
+    document.getElementById('entrada').value = '';
+    document.getElementById('resultados').innerHTML = '';
+    document.getElementById('mensaje').textContent = '';
+    filasCsv = []; document.getElementById('csv').disabled = true;
+  });
+})();
+</script>
+</body>
+</html>

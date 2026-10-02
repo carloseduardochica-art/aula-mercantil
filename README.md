@@ -21,6 +21,7 @@ bloques y las actividades que corren fuera de Moodle.
 | `foro-b2/` | AD‑2 · foro socrático con IA · 10 pts | 50 KB |
 | `autocontrol-b1/` | AA‑1 · 78 preguntas · 15 pts | 3,5 MB |
 | `autocontrol-b2/` | AA‑2 · 70 preguntas · 15 pts | 1,1 MB |
+| `docente/` | Mesa del docente: verifica códigos de constancia y regenera la constancia en PDF desde el pase de avance. No está enlazada desde la portada | 20 KB |
 | `worker/` | El proxy de IA. **No se publica**: es documentación y el código que va a Cloudflare | 10 KB |
 
 Todos los archivos son **autocontenidos**: las láminas viajan dentro en base64,
