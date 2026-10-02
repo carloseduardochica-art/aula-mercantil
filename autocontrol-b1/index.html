@@ -5936,7 +5936,7 @@ document.head.appendChild(css);
         var s = r.por[i];
         lis[i].className = (s.hechos === s.total && s.total) ? 'completa' : '';
         lis[i].textContent = s.pestana + ' — ' + s.hechos + '/' + s.total
-          + (s.hechos === s.total && s.total ? '  ·  ' + s.puntos.toFixed(2) + ' pt' : '');
+          + (s.hechos === s.total && s.total ? '  ·  ' + puntosVista(s).toFixed(2) + ' pt' : '');
       }
     }
     bloquearIdentidad();
@@ -6328,6 +6328,26 @@ document.head.appendChild(css);
      hoja tiene que decir lo mismo que el codigo: antes pintaba las respuestas
      en pantalla, y con un segundo intento peor, o a medias, se contradecian.
      El PDF descargado y la hoja imprimible salen los dos de aqui. */
+  /* En la nota proporcional los puntos por seccion que se guardan (1 por
+     seccion) no son los que dan la nota: sumaban 7.78 junto a una nota de 6.
+     A la vista se muestra lo que si la explica: cada apartado vale
+     TOPE / TOTAL_AP. Lo guardado y el codigo no cambian. */
+  function puntosVista(s){
+    return MODO_NOTA === 'proporcional' ? (TOTAL_AP ? s.aciertos * TOPE / TOTAL_AP : 0) : s.puntos;
+  }
+  function brutoVista(aciertos, bruto){
+    return MODO_NOTA === 'proporcional' ? (TOTAL_AP ? aciertos * TOPE / TOTAL_AP : 0) : bruto;
+  }
+  function textoTope(d){
+    var b = brutoVista(d.aciertos, d.bruto);
+    if (b === null) return '';
+    if (MODO_NOTA === 'proporcional') {
+      return Math.abs(b - d.nota) > 0.005
+        ? '(' + b.toFixed(2) + ' puntos exactos, subidos al medio punto)' : '';
+    }
+    return b > TOPE ? '(' + b.toFixed(2) + ' puntos brutos, topados en ' + TOPE + ')' : '';
+  }
+
   function contenidoConstancia(r){
     var m = (INTENTOS > 1 || !!CIERRE) ? mejor() : null;
     var d = m
@@ -6356,14 +6376,13 @@ document.head.appendChild(css);
     var filas = [];
     if (d.por) for (var k = 0; k < d.por.length; k++) {
       var s = d.por[k];
-      filas.push([String(k + 1), s.pestana, s.aciertos + ' / ' + s.total, s.puntos.toFixed(2)]);
+      filas.push([String(k + 1), s.pestana, s.aciertos + ' / ' + s.total, puntosVista(s).toFixed(2)]);
     }
     return {
       datos: datos, filas: filas,
-      total: ['Total', d.aciertos + ' / ' + TOTAL_AP, d.bruto === null ? '' : d.bruto.toFixed(2)],
+      total: ['Total', d.aciertos + ' / ' + TOTAL_AP, brutoVista(d.aciertos, d.bruto) === null ? '' : brutoVista(d.aciertos, d.bruto).toFixed(2)],
       nota: fmtNota(d.nota) + ' / ' + TOPE,
-      topada: (d.bruto !== null && d.bruto > TOPE)
-        ? '(' + d.bruto.toFixed(2) + ' puntos brutos, topados en ' + TOPE + ')' : '',
+      topada: textoTope(d),
       codigo: codigo(r)
     };
   }

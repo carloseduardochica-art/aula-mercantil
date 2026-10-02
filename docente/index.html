@@ -375,19 +375,29 @@ code{font-size:.8rem;overflow-wrap:anywhere}
     }
     var sn = !!B.sin_nota;
     fila(['#', 'Sección', 'Aciertos', sn ? '' : 'Puntos'], true, 235);
+    /* Con nota proporcional los puntos por seccion guardados (1 por seccion)
+       no dan la nota: se muestra lo que si la explica, TOPE / total por apartado. */
+    var prop = B.modo_nota === 'proporcional' && B.total > 0;
+    function ptsVista(s){ return prop ? s.aciertos * B.nota_maxima / B.total : s.puntos; }
+    var brutoVista = prop ? r.aciertos * B.nota_maxima / B.total : r.bruto;
+    var exacto = prop && Math.abs(brutoVista - r.nota) > 0.005;
     r.por.forEach(function(s, i){
-      fila([String(i + 1), s.pestana, s.aciertos + ' / ' + s.total, sn ? '' : s.puntos.toFixed(2)], false, null);
+      fila([String(i + 1), s.pestana, s.aciertos + ' / ' + s.total, sn ? '' : ptsVista(s).toFixed(2)], false, null);
     });
-    fila(['', 'Total', r.aciertos + ' / ' + B.total, sn ? '' : r.bruto.toFixed(2)], true, 246);
+    fila(['', 'Total', r.aciertos + ' / ' + B.total, sn ? '' : brutoVista.toFixed(2)], true, 246);
 
     if (sn) {
       y += 6;
     } else {
       y += 6; salto(20);
-      doc.setDrawColor(0); doc.setLineWidth(0.6); doc.rect(IZQ + 30, y - 6, ANCHO - 60, 13);
+      doc.setDrawColor(0); doc.setLineWidth(0.6); doc.rect(IZQ + 30, y - 6, ANCHO - 60, exacto ? 18 : 13);
       doc.setFont('helvetica', 'normal'); doc.setFontSize(14); doc.setTextColor(0);
       doc.text('Nota final  ' + fmtNota(r.nota) + ' / ' + B.nota_maxima, 105, y + 2.5, { align: 'center' });
-      y += 15;
+      if (exacto) {
+        doc.setFontSize(9); doc.setTextColor(90);
+        doc.text('(' + brutoVista.toFixed(2) + ' puntos exactos, subidos al medio punto)', 105, y + 8.5, { align: 'center' });
+      }
+      y += exacto ? 20 : 15;
     }
 
     doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(60);
