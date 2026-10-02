@@ -776,7 +776,18 @@ h3{
     navegador, de modo que puede trabajar en varias sesiones; la constancia con su
     nota se emite cuando haya completado las 20 secciones.</p>
     <p class="fijada" id="identidad-fijada" hidden>Su identificación quedó fijada
-    con la primera respuesta. Si se equivocó, use «empezar de nuevo» al final.</p>
+    con la primera respuesta. Si se equivocó, use «empezar de nuevo» en el recuadro
+    «¿Perdió su avance, o necesita empezar de nuevo?», justo debajo.</p>
+    <details>
+      <summary>¿Perdió su avance, o necesita empezar de nuevo?</summary>
+      <label for="restaurar-avance">Pegue aquí su pase de avance, el texto que empieza por PASE</label>
+      <textarea id="restaurar-avance" placeholder="PASE|..." autocomplete="off"
+                autocapitalize="off" spellcheck="false"></textarea>
+      <span class="aviso-campo" id="aviso-restaurar" role="status"></span>
+      <div class="acciones-id">
+        <button type="button" id="reiniciar-control">Empezar de nuevo (borra mi avance en este navegador)</button>
+      </div>
+    </details>
   </div>
 </div>
 </section>
@@ -6178,8 +6189,8 @@ document.head.appendChild(css);
     if (pista) {
       pista.innerHTML = 'Péguelo donde pueda recuperarlo: un mensaje a usted mismo, '
         + 'una nota del teléfono o el borrador de la tarea en el aula virtual. Si '
-        + 'continúa en otro equipo, péguelo en «Continuar en otro dispositivo», '
-        + 'al principio del documento.<br><code class="pase">' + texto + '</code>';
+        + 'continúa en otro equipo, ábralo en ese equipo y péguelo en «¿Perdió su '
+        + 'avance, o necesita empezar de nuevo?», al principio del documento.<br><code class="pase">' + texto + '</code>';
     }
     setTimeout(function(){ boton.textContent = 'Copiar mi pase de avance'; }, 2500);
   }
@@ -6205,33 +6216,70 @@ document.head.appendChild(css);
   }
 
   /* ---------- continuar en otro dispositivo ---------- */
-  var campoR = document.getElementById('restaurar-avance');
-  if (campoR) {
-    campoR.addEventListener('change', function(){
-      var v = campoR.value.trim();
-      var avisoR = document.getElementById('aviso-restaurar');
-      if (!v) return;
-      var st = deserializar(v);
-      if (!st) {
-        avisoR.textContent = 'Ese pase no se pudo leer. Cópielo entero, desde la '
-          + 'palabra PASE hasta el último carácter, sin espacios ni saltos de línea '
-          + 'en medio.';
-        return;
+  /* El pase llega pegado desde un mensaje, un correo o una nota del telefono, y
+     esos medios lo ensucian: parten la linea, cambian los espacios por
+     espacios duros, meten caracteres invisibles o lo rodean de texto. Se
+     extrae el pase del texto pegado en vez de exigir que llegue limpio. */
+  function extraerPase(texto){
+    var base = String(texto || '').replace(/[​-‍⁠﻿]/g, '');
+    // Un salto de linea puede ser un espacio que se partio o una palabra que se
+    // corto: no hay forma de saberlo, asi que se prueban las dos lecturas y
+    // queda la que valide con la firma del pase.
+    var lecturas = [
+      base.replace(/[\r\n]+/g, '').replace(/ /g, ' '),
+      base.replace(/[\r\n]+/g, ' ').replace(/ /g, ' '),
+      base.replace(/[\r\n ]+/g, '')
+    ];
+    var candidatos = [];
+    for (var i = 0; i < lecturas.length; i++) {
+      var t = lecturas[i].replace(/[ \t]+/g, ' ');
+      var m = t.match(/PASE\|[^|]+\|\d*\|[^|]*\|[-0-9]*\|\d+\|([0-9A-Za-z]+)/i);
+      if (!m) continue;
+      var cabeza = m[0].slice(0, m[0].length - m[1].length);
+      // El texto que sigue al pase (un «Gracias») puede quedar pegado a la firma.
+      for (var L = m[1].length; L >= 1; L--) {
+        candidatos.push((cabeza + m[1].slice(0, L)).toUpperCase());
       }
-      var tenia = Object.keys(estado.respuestas).length;
-      var trae = Object.keys(st.respuestas).length;
-      // Pegar un pase mas atrasado que lo ya registrado borraria trabajo hecho.
-      if (tenia > trae && !confirm('En este navegador ya hay ' + tenia + ' respuestas y '
-          + 'el pase trae ' + trae + '. Si continúa, se quedará con las del pase y '
-          + 'perderá las otras. ¿Continuar?')) { campoR.value = ''; return; }
-      estado = st; guardar();
-      if (campoN) campoN.value = estado.nombre || '';
-      if (campoC) campoC.value = estado.cedula || '';
-      revisarCedula(); pintarTodo();
-      avisoR.textContent = 'Avance recuperado: ' + trae + ' respuestas de '
-        + TOTAL_AP + '. Puede seguir donde lo dejó.';
-      campoR.value = '';
+    }
+    return candidatos;
+  }
+
+  var campoR = document.getElementById('restaurar-avance');
+  var avisoR = document.getElementById('aviso-restaurar');
+  function restaurarDesdeCampo(avisarSiFalla){
+    if (!campoR || !avisoR) return;
+    var crudo = campoR.value;
+    if (!crudo.trim()) return;
+    var st = null, cands = extraerPase(crudo);
+    for (var k = 0; k < cands.length && !st; k++) st = deserializar(cands[k]);
+    if (!st) {
+      if (avisarSiFalla) avisoR.textContent = 'Ese pase no se pudo leer. Copie el '
+        + 'mensaje completo, desde la palabra PASE hasta el último carácter. Si '
+        + 'lo copió de un chat y se cortó, vuelva a copiarlo entero.';
+      return;
+    }
+    var tenia = Object.keys(estado.respuestas).length;
+    var trae = Object.keys(st.respuestas).length;
+    // Pegar un pase mas atrasado que lo ya registrado borraria trabajo hecho.
+    if (tenia > trae && !confirm('En este navegador ya hay ' + tenia + ' respuestas y '
+        + 'el pase trae ' + trae + '. Si continúa, se quedará con las del pase y '
+        + 'perderá las otras. ¿Continuar?')) { campoR.value = ''; return; }
+    estado = st; guardar();
+    if (campoN) campoN.value = estado.nombre || '';
+    if (campoC) campoC.value = estado.cedula || '';
+    revisarCedula(); pintarTodo();
+    avisoR.textContent = 'Avance recuperado: ' + trae + ' respuestas de '
+      + TOTAL_AP + '. Puede seguir donde lo dejó.';
+    campoR.value = '';
+  }
+  if (campoR) {
+    // Al pegar o escribir se intenta restaurar en silencio: en el movil el
+    // evento «change» solo llega al salir del campo, y nadie sabe que debe salir.
+    campoR.addEventListener('input', function(){ restaurarDesdeCampo(false); });
+    campoR.addEventListener('paste', function(){
+      setTimeout(function(){ restaurarDesdeCampo(true); }, 0);
     });
+    campoR.addEventListener('change', function(){ restaurarDesdeCampo(true); });
   }
 
   /* ---------- aviso al cerrar una seccion ----------
