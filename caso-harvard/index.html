@@ -179,6 +179,16 @@ h1,h2,h3,h4{font-family:var(--titulo);font-weight:600;line-height:1.2;margin:0}
   .banda, .pasos-nav, .acciones, .validador-caja, .sala-juntas{display:none}
   #documento-pdf{box-shadow:none;border:none;padding:0}
 }
+/* ---------- guardado y respaldo ---------- */
+.guardado-barra{margin:.4rem 0 0;font-size:.8rem;color:var(--tinta-suave);text-align:right;min-height:1.2em}
+.respaldo-caja{margin-top:1.5rem;padding:1rem 1.2rem;border:1px dashed var(--linea);border-radius:6px;font-size:.92rem}
+.respaldo-caja summary{cursor:pointer;font-weight:600;color:var(--acento)}
+.respaldo-caja p{margin:.6rem 0}
+.respaldo-caja textarea{width:100%;min-height:70px;font:12px/1.4 ui-monospace,Consolas,monospace;margin-top:.4rem}
+.respaldo-fila{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:.6rem}
+.aviso-ced{font-size:.82rem;margin:.3rem 0 0;color:var(--contra)}
+#pdf-hash{word-break:break-all}
+@media print{ .guardado-barra,.respaldo-caja{display:none} }
 </style>
 </head>
 <body>
@@ -206,6 +216,7 @@ h1,h2,h3,h4{font-family:var(--titulo);font-weight:600;line-height:1.2;margin:0}
     <button class="paso-btn" id="btn-paso-4" onclick="irAPaso(4)">4. Control Registral & Notarial</button>
     <button class="paso-btn" id="btn-paso-5" onclick="irAPaso(5)">5. Descarga Acta PDF</button>
   </nav>
+  <p class="guardado-barra" id="guardado-estado" aria-live="polite"></p>
 
   <!-- ==================== PASO 1: ASIGNACIÓN ==================== -->
   <section id="paso-1" class="panel">
@@ -230,6 +241,7 @@ h1,h2,h3,h4{font-family:var(--titulo);font-weight:600;line-height:1.2;margin:0}
       <div class="campo">
         <label for="est-cedula">Número de Cédula de Identidad:</label>
         <input type="text" id="est-cedula" maxlength="10" placeholder="Ej. 0102030405" oninput="procesarDatosEstudiante()">
+        <p class="aviso-ced" id="aviso-cedula"></p>
       </div>
       <div class="campo">
         <label for="est-pareja">Compañero/a para Sustentación Oral (Pareja):</label>
@@ -240,6 +252,27 @@ h1,h2,h3,h4{font-family:var(--titulo);font-weight:600;line-height:1.2;margin:0}
     <div id="expediente-resumen" class="oculto" style="margin-top:1.5rem;padding:1.2rem;background:#fbfbf9;border:1px solid var(--linea);border-radius:6px;">
       <h3 style="font-size:1.05rem;color:var(--acento);margin-bottom:.5rem;">Resumen del Expediente Asignado: <span id="variante-titulo"></span></h3>
       <div id="variante-detalles" style="font-size:.92rem;line-height:1.6;"></div>
+    </div>
+
+    <div class="respaldo-caja">
+      <p style="margin-top:0"><b>Su trabajo se guarda solo en este navegador</b> mientras escribe:
+        puede cerrar la página y volver otro día desde el mismo aparato.</p>
+      <details>
+        <summary>Continuar en otro dispositivo o guardar una copia</summary>
+        <p>Para seguir en otro aparato, o por si se borran los datos del navegador, guarde su
+          <b>respaldo</b>: un texto que contiene todo lo que lleva escrito. Guárdelo en un mensaje a
+          usted mismo o en un archivo.</p>
+        <div class="respaldo-fila">
+          <button type="button" class="btn btn-sec" onclick="copiarRespaldo(this)">Copiar mi respaldo</button>
+          <button type="button" class="btn btn-sec" onclick="descargarRespaldo()">Descargar mi respaldo (.txt)</button>
+        </div>
+        <p>¿Viene de otro aparato? Pegue aquí su respaldo (empieza por <code>PASEH|</code>):</p>
+        <textarea id="respaldo-entrada" spellcheck="false" aria-label="Respaldo a recuperar"></textarea>
+        <div class="respaldo-fila">
+          <button type="button" class="btn btn-sec" onclick="restaurarRespaldo()">Recuperar mi trabajo</button>
+        </div>
+        <p id="respaldo-aviso" aria-live="polite"></p>
+      </details>
     </div>
 
     <div class="acciones">
@@ -617,6 +650,22 @@ h1,h2,h3,h4{font-family:var(--titulo);font-weight:600;line-height:1.2;margin:0}
       <button class="btn btn-sec" onclick="irAPaso(4)">&larr; Volver al Control Registral</button>
       <button class="btn btn-grande" onclick="descargarPDF()">📥 Descargar Acta en PDF (8 Pts)</button>
     </div>
+    <div class="respaldo-caja">
+      <p style="margin-top:0"><b>Código de validación del acta.</b> Al subir el PDF a Moodle, pegue este
+        código en los <b>COMENTARIOS</b> de la tarea: con él el docente verifica su acta.</p>
+      <textarea id="codigo-acta" readonly aria-label="Código de validación del acta" style="min-height:52px"></textarea>
+      <div class="respaldo-fila">
+        <button type="button" class="btn btn-sec" onclick="copiarCodigo(this)">Copiar el código</button>
+      </div>
+    </div>
+    <div class="respaldo-caja">
+      <p style="margin-top:0">Antes de subir el acta, guarde también su <b>respaldo</b>: si el docente
+        necesita revisar su trabajo, o usted debe corregir algo, con él se recupera todo lo escrito.</p>
+      <div class="respaldo-fila">
+        <button type="button" class="btn btn-sec" onclick="copiarRespaldo(this)">Copiar mi respaldo</button>
+        <button type="button" class="btn btn-sec" onclick="descargarRespaldo()">Descargar mi respaldo (.txt)</button>
+      </div>
+    </div>
   </section>
 
 </main>
@@ -835,10 +884,11 @@ function actualizarVistaPrevia() {
   document.getElementById('pdf-txt-p4').textContent = p4 || '[SIN REDACTAR — el acta no debe emitirse así]';
   document.getElementById('pdf-pareja').textContent = estado.pareja || 'Individual / Por asignar';
 
-  // Generar Hash Simulado
-  var seed = (estado.cedula + estado.nombre + fecha + hora + p1.length + p2.length).split('').reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
-  var hashHex = 'UCACUE-ABP-' + Math.abs(seed).toString(16).toUpperCase().padStart(8, '0') + '-' + Math.abs(seed*31).toString(16).toUpperCase().padStart(6, '0');
-  document.getElementById('pdf-hash').textContent = hashHex;
+  // Codigo de validacion firmado (ver codigoActa, mas abajo).
+  var codigoVigente = codigoActa();
+  document.getElementById('pdf-hash').textContent = codigoVigente;
+  var campoCodigo = document.getElementById('codigo-acta');
+  if (campoCodigo) campoCodigo.value = codigoVigente;
   document.getElementById('pdf-timestamp').textContent = new Date().toLocaleString('es-EC');
 
   var ctrl = document.getElementById('pdf-control');
@@ -912,7 +962,7 @@ function verificarPreguntas() {
     fb.style.color = 'var(--contra)';
     fb.innerHTML = '<b>&#9888; Acert&oacute; ' + aciertos + ' de ' + nombres.length + '.</b> ' +
       'No se le indica cu&aacute;les para que vuelva a la norma y no descarte por tanteo. ' +
-      'Rev&iacute;selas en este orden: la Disposici&oacute;n General Tercera de la Ley de '
+      'Rev&iacute;selas en este orden: la Disposici&oacute;n General Tercera de la Ley de ' +
       'Compa&ntilde;&iacute;as, la Secci&oacute;n Innumerada de la S.A.S. y su proceso de ' +
       'transformaci&oacute;n, el Art. 238 de la Ley de Compa&ntilde;&iacute;as, y los Arts. 113 a 115 ' +
       'del C&oacute;digo de Comercio de 2019.';
@@ -983,6 +1033,238 @@ function descargarPDF() {
       });
   }, 350);
 }
+
+/* =====================================================================
+   GUARDADO, RESPALDO Y CODIGO DE VALIDACION
+   La tarea esta abierta seis semanas y antes no guardaba nada: una recarga
+   de la pestana —en el telefono basta con cambiar de aplicacion— borraba el
+   acta entera. Ahora:
+   · todo se guarda solo en este navegador mientras se escribe;
+   · el respaldo (PASEH|...) lleva el trabajo a otro aparato y le permite al
+     docente leerlo en la mesa del docente;
+   · el codigo del acta va firmado e incluye el control registral y una
+     huella del texto, de modo que la mesa del docente puede verificarlo.
+   ===================================================================== */
+var SAL_ACTA = 'CH-acta-v1';
+var CLAVE_GUARDADO = 'caso-harvard::v1';
+var CAMPOS = ['est-nombre', 'est-cedula', 'est-pareja', 'acta-fecha', 'acta-hora',
+              'acta-quorum', 'acta-p1', 'acta-p2', 'acta-p3', 'acta-p4'];
+var PREGUNTAS = ['q1', 'q2', 'q3', 'q4', 'q5'];
+
+function djb2(s) {
+  var h = 5381;
+  for (var i = 0; i < s.length; i++) h = ((h * 33) + s.charCodeAt(i)) >>> 0;
+  return h;
+}
+function b36(n) { return n.toString(36).toUpperCase(); }
+function soloDigitos(s) { return (s || '').replace(/\D/g, ''); }
+function normNombre(s) {
+  return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/\|/g, ' ').replace(/\s+/g, ' ').trim().toUpperCase();
+}
+function cedulaValida(c) {
+  c = soloDigitos(c);
+  if (c.length !== 10) return false;
+  var prov = parseInt(c.slice(0, 2), 10);
+  if (!((prov >= 1 && prov <= 24) || prov === 30)) return false;
+  if (parseInt(c[2], 10) > 5) return false;
+  var suma = 0;
+  for (var i = 0; i < 9; i++) {
+    var d = parseInt(c[i], 10) * (i % 2 === 0 ? 2 : 1);
+    if (d > 9) d -= 9;
+    suma += d;
+  }
+  return (10 - (suma % 10)) % 10 === parseInt(c[9], 10);
+}
+function selloLocal() {
+  var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; };
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) +
+    ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+function valor(id) { var el = document.getElementById(id); return el ? el.value : ''; }
+function marcadas() {
+  return PREGUNTAS.map(function (n) {
+    var s = document.querySelector('input[name="' + n + '"]:checked');
+    return s ? s.value : '-';
+  }).join('');
+}
+
+/* La huella cubre fecha, hora y las cinco partes del acta, en este orden. La
+   mesa del docente la recalcula con el texto del respaldo. */
+function textoActa() {
+  return ['acta-fecha', 'acta-hora', 'acta-quorum', 'acta-p1', 'acta-p2', 'acta-p3', 'acta-p4']
+    .map(valor).join('\n');
+}
+function codigoActa() {
+  // Los aciertos los cuenta verificarPreguntas, que corre con cada respuesta.
+  var texto = textoActa(), q = marcadas(), bien = estado.controlAciertos || 0;
+  var cuerpo = ['CH', soloDigitos(valor('est-cedula')), normNombre(valor('est-nombre')),
+    (parseInt(soloDigitos(valor('est-cedula')).slice(-1), 10) % 2 === 0) ? 'VA' : 'VB',
+    bien + '/5C', q, texto.length + 'L', b36(djb2(SAL_ACTA + texto)) + 'T', selloLocal()].join('|');
+  return cuerpo + '|' + b36(djb2(SAL_ACTA + cuerpo));
+}
+
+/* ---------- guardado automatico ---------- */
+function recoger() {
+  var d = { v: 1, campos: {}, q: marcadas(), paso: estado.pasoActual || 1, ts: Date.now() };
+  CAMPOS.forEach(function (id) { d.campos[id] = valor(id); });
+  return d;
+}
+function pintarGuardado(ts, texto) {
+  var el = document.getElementById('guardado-estado');
+  if (!el) return;
+  var h = new Date(ts), p = function (n) { return (n < 10 ? '0' : '') + n; };
+  el.textContent = (texto || 'Guardado en este navegador') + ' · ' + p(h.getHours()) + ':' + p(h.getMinutes());
+}
+var hayAlgo = false;
+function guardarTrabajo() {
+  var d = recoger();
+  hayAlgo = hayAlgo || CAMPOS.some(function (id) { return id !== 'acta-quorum' && id !== 'acta-fecha' && id !== 'acta-hora' && d.campos[id]; });
+  if (!hayAlgo) return;
+  try {
+    localStorage.setItem(CLAVE_GUARDADO, JSON.stringify(d));
+    pintarGuardado(d.ts);
+  } catch (e) {
+    var el = document.getElementById('guardado-estado');
+    if (el) el.textContent = 'Este navegador no permite guardar: copie su respaldo con frecuencia.';
+  }
+}
+var temporizadorGuardado = null;
+function programarGuardado() {
+  clearTimeout(temporizadorGuardado);
+  temporizadorGuardado = setTimeout(guardarTrabajo, 600);
+}
+document.addEventListener('input', function (e) {
+  if (e.target && e.target.id === 'respaldo-entrada') return;
+  programarGuardado();
+});
+document.addEventListener('change', function (e) {
+  if (e.target && e.target.id === 'respaldo-entrada') return;
+  programarGuardado();
+});
+window.addEventListener('pagehide', guardarTrabajo);
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState === 'hidden') guardarTrabajo();
+});
+
+function aplicar(d) {
+  CAMPOS.forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el && typeof d.campos[id] === 'string') el.value = d.campos[id];
+  });
+  PREGUNTAS.forEach(function (n, i) {
+    var v = (d.q || '')[i];
+    var radios = document.querySelectorAll('input[name="' + n + '"]');
+    for (var k = 0; k < radios.length; k++) radios[k].checked = (radios[k].value === v);
+  });
+  procesarDatosEstudiante();
+  actualizarVistaPrevia();
+  verificarPreguntas();
+  /* Se vuelve al paso donde estaba. Si algun requisito ya no se cumple, el
+     propio irAPaso lo devuelve atras; aqui no se avisa con ventanas. */
+  var alertaOriginal = window.alert;
+  window.alert = function () {};
+  try { irAPaso(Math.max(1, Math.min(5, d.paso || 1))); } finally { window.alert = alertaOriginal; }
+  hayAlgo = true;
+}
+
+/* ---------- respaldo ---------- */
+function aBase64(texto) {
+  var bytes = new TextEncoder().encode(texto), bin = '';
+  for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+function deBase64(b64) {
+  var bin = atob(b64), bytes = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+function respaldo() {
+  var cuerpo = 'PASEH|' + aBase64(JSON.stringify(recoger()));
+  return cuerpo + '|' + b36(djb2(SAL_ACTA + cuerpo));
+}
+function leerRespaldo(texto) {
+  var m = String(texto || '').replace(/\s+/g, '').match(/PASEH\|[A-Za-z0-9+\/=]+\|[0-9A-Z]+/);
+  if (!m) return null;
+  var p = m[0].split('|');
+  if (b36(djb2(SAL_ACTA + p[0] + '|' + p[1])) !== p[2]) return null;
+  try {
+    var d = JSON.parse(deBase64(p[1]));
+    return (d && d.campos) ? d : null;
+  } catch (e) { return null; }
+}
+function alPortapapeles(texto) {
+  var ta = document.createElement('textarea');
+  ta.value = texto; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, texto.length);
+  var ok = false;
+  try { ok = document.execCommand('copy'); } catch (e) {}
+  if (!ok && navigator.clipboard) navigator.clipboard.writeText(texto);
+  document.body.removeChild(ta);
+}
+function copiarRespaldo(boton) {
+  guardarTrabajo();
+  alPortapapeles(respaldo());
+  var antes = boton.textContent;
+  boton.textContent = 'Respaldo copiado';
+  setTimeout(function () { boton.textContent = antes; }, 2500);
+}
+function copiarCodigo(boton) {
+  actualizarVistaPrevia();
+  alPortapapeles(valor('codigo-acta'));
+  boton.textContent = 'Código copiado';
+  setTimeout(function () { boton.textContent = 'Copiar el código'; }, 2500);
+}
+function descargarRespaldo() {
+  guardarTrabajo();
+  var texto = 'Respaldo del Caso Harvard · Derecho Mercantil y Societario\n' +
+    'Estudiante: ' + normNombre(valor('est-nombre')) + ' · Cédula: ' + soloDigitos(valor('est-cedula')) + '\n' +
+    'Generado: ' + selloLocal() + '\n\n' +
+    'Para recuperar su trabajo, abra el Caso Harvard, despliegue «Continuar en otro\n' +
+    'dispositivo» y pegue la línea de abajo completa, desde PASEH hasta el final.\n\n' +
+    respaldo() + '\n';
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([texto], { type: 'text/plain;charset=utf-8' }));
+  a.download = 'Respaldo_Caso_Harvard_' + (soloDigitos(valor('est-cedula')) || 'UCACUE') + '.txt';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+function restaurarRespaldo() {
+  var aviso = document.getElementById('respaldo-aviso');
+  var d = leerRespaldo(valor('respaldo-entrada'));
+  if (!d) {
+    aviso.textContent = 'Ese respaldo no se pudo leer. Cópielo entero, desde PASEH hasta el último carácter.';
+    return;
+  }
+  var actual = recoger();
+  var escritoAqui = ['acta-p1', 'acta-p2', 'acta-p3', 'acta-p4']
+    .reduce(function (n, id) { return n + (actual.campos[id] || '').length; }, 0);
+  if (escritoAqui && !confirm('En este navegador ya hay un acta en curso. Si continúa, se reemplaza ' +
+      'por la del respaldo. ¿Continuar?')) return;
+  aplicar(d);
+  guardarTrabajo();
+  document.getElementById('respaldo-entrada').value = '';
+  aviso.textContent = 'Trabajo recuperado. Puede seguir donde lo dejó.';
+}
+
+/* ---------- aviso de cedula: decide la variante del caso ---------- */
+var procesarOriginal = procesarDatosEstudiante;
+procesarDatosEstudiante = function () {
+  procesarOriginal();
+  var c = soloDigitos(valor('est-cedula')), av = document.getElementById('aviso-cedula');
+  if (av) av.textContent = (c.length === 10 && !cedulaValida(c))
+    ? 'Revise su cédula: el último dígito no cuadra, y ese dígito decide su variante del caso.' : '';
+};
+
+/* ---------- al abrir: recuperar lo guardado ---------- */
+(function () {
+  try {
+    var g = localStorage.getItem(CLAVE_GUARDADO);
+    if (g) {
+      var d = JSON.parse(g);
+      if (d && d.campos) { aplicar(d); pintarGuardado(d.ts, 'Trabajo recuperado de este navegador'); }
+    }
+  } catch (e) {}
+})();
 </script>
 
 </body>

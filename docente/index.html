@@ -67,7 +67,8 @@ code{font-size:.8rem;overflow-wrap:anywhere}
   <section class="entrada">
     <p>Pegue aquí, uno por línea, los <b>pases de avance</b> (empiezan por <code>PASE|M1|</code>)
       o los <b>códigos de validación</b> de las constancias (empiezan por <code>M1|</code> o
-      <code>M2|</code>). Puede pegarlos con texto alrededor, por ejemplo copiados de un mensaje.</p>
+      <code>M2|</code>). Del <b>Caso Harvard</b>, el respaldo (<code>PASEH|</code>) y el código del acta
+      (<code>CH|</code>). Puede pegarlos con texto alrededor, por ejemplo copiados de un mensaje.</p>
     <textarea id="entrada" spellcheck="false" aria-label="Pases o códigos, uno por línea"></textarea>
     <div class="acciones">
       <button type="button" id="revisar">Revisar</button>
@@ -87,7 +88,10 @@ code{font-size:.8rem;overflow-wrap:anywhere}
     constancia no informa plazo ni tiempo de trabajo. Con un <b>código</b>, la página comprueba
     que la firma corresponde a los datos y que la nota cuadra con los aciertos. La firma detecta
     un código retocado a mano, pero no es criptográfica: si hay dudas sobre una nota, pida el
-    pase y recalcúlela. Esta página no guarda ni envía nada; todo ocurre en este navegador.</p>
+    pase y recalcúlela. Del <b>Caso Harvard</b>, la página no califica el acta: verifica su código (firma, variante y
+    control registral) y, con el respaldo, muestra el texto completo. Si pega el respaldo y el código
+    del mismo estudiante, compara la huella del texto para saber si el acta entregada es la misma.
+    Esta página no guarda ni envía nada; todo ocurre en este navegador.</p>
 </main>
 
 <script>
@@ -95,6 +99,10 @@ code{font-size:.8rem;overflow-wrap:anywhere}
   /* Lo unico que cambia de un aula a otra: de que paginas sale cada bloque. */
   var FUENTES = { M1: '../autocontrol-b1/', M2: '../autocontrol-b2/' };
   var CLAVES = Object.keys(FUENTES).join('|');
+  /* El Caso Harvard tiene su propio respaldo (PASEH|) y su propio codigo (CH|).
+     null en un aula que no lo tiene. */
+  var CASO = '../caso-harvard/';
+  var casoCargado = null;
   var bancos = {};               // bloque -> promesa del banco
   var filasCsv = [];
 
@@ -407,6 +415,191 @@ code{font-size:.8rem;overflow-wrap:anywhere}
       + r.nombre.replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40) + '.pdf');
   }
 
+  /* ---------- Caso Harvard ----------
+     El acta se corrige leyendola: la mesa no la califica. Lo que hace es
+     verificar el codigo que trae el PDF (firma, variante, control registral)
+     y, con el respaldo, mostrar el texto completo que escribio el estudiante.
+     Si en la misma tanda hay respaldo y codigo de un mismo estudiante, compara
+     la huella del texto: asi se sabe si el acta entregada es la del respaldo. */
+  function cargarCaso(){
+    if (!casoCargado) {
+      casoCargado = fetch(CASO, { cache: 'no-cache' })
+        .then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+        .then(function(html){
+          var sal = html.match(/var SAL_ACTA = '([^']*)'/);
+          var cl = html.match(/var CLAVE = \{([^}]*)\}/);
+          var ro = html.match(/var ROTULOS = \{([^}]*)\}/);
+          if (!sal || !cl) throw new Error('No se pudo leer la configuración del Caso Harvard.');
+          var C = { sal: sal[1], clave: '', rotulos: [] };
+          cl[1].replace(/q(\d)\s*:\s*'([a-c])'/g, function(_, n, v){ C.clave += v; });
+          if (ro) ro[1].replace(/q(\d)\s*:\s*'([^']*)'/g, function(_, n, v){ C.rotulos.push(v); });
+          return C;
+        });
+      casoCargado.catch(function(){ casoCargado = null; });
+    }
+    return casoCargado;
+  }
+  function desdeBase64(b64){
+    var bin = atob(b64), bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  }
+  function normCaso(s){
+    return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/\|/g, ' ').replace(/\s+/g, ' ').trim().toUpperCase();
+  }
+  function controlCaso(q, C){
+    var bien = 0, det = [];
+    for (var i = 0; i < 5; i++) {
+      var v = q[i] || '-';
+      if (v === C.clave[i]) bien++;
+      det.push({ n: i + 1, rotulo: C.rotulos[i] || '', marcada: v, correcta: C.clave[i] });
+    }
+    return { bien: bien, det: det };
+  }
+  var PARTES = [['acta-quorum', 'Constatación de quórum y Junta Universal'],
+                ['acta-p1', 'Punto 1 · Mercantilidad y Código de Comercio'],
+                ['acta-p2', 'Punto 2 · Exigibilidad cambiaria y prescripción'],
+                ['acta-p3', 'Punto 3 · Oferta de inversión y transformación societaria'],
+                ['acta-p4', 'Punto 4 · Auditoría externa y blindaje patrimonial']];
+
+  function leerPaseCaso(texto, C){
+    var p = texto.split('|');
+    var r = { tipo: 'respaldo', texto: texto, problemas: [] };
+    if (b36(djb2(C.sal + p[0] + '|' + p[1])) !== p[2]) {
+      r.invalido = 'La firma no corresponde: el respaldo se copió a medias o fue modificado.'; return r;
+    }
+    var d;
+    try { d = JSON.parse(desdeBase64(p[1])); } catch (e) { r.invalido = 'El respaldo no se pudo leer.'; return r; }
+    var c = d.campos || {};
+    r.nombre = normCaso(c['est-nombre']); r.cedula = soloDigitos(c['est-cedula']);
+    r.pareja = c['est-pareja'] || ''; r.campos = c; r.guardado = d.ts;
+    r.variante = (parseInt(r.cedula.slice(-1), 10) % 2 === 0) ? 'A (cédula par)' : 'B (cédula impar)';
+    var ctl = controlCaso(d.q || '', C);
+    r.aciertos = ctl.bien; r.control = ctl.det;
+    var txt = ['acta-fecha', 'acta-hora', 'acta-quorum', 'acta-p1', 'acta-p2', 'acta-p3', 'acta-p4']
+      .map(function(k){ return c[k] || ''; }).join('\n');
+    r.huella = b36(djb2(C.sal + txt)); r.largo = txt.length;
+    if (!cedulaValida(r.cedula)) r.problemas.push('La cédula no supera el dígito verificador.');
+    if ((d.q || '').indexOf('-') !== -1) r.problemas.push('El control registral no está completo en el respaldo.');
+    PARTES.forEach(function(pt){
+      if ((c[pt[0]] || '').trim().length < 50) r.problemas.push(pt[1] + ': casi sin redactar.');
+    });
+    return r;
+  }
+
+  function leerCodigoCaso(texto, C){
+    var p = texto.split('|');
+    var r = { tipo: 'codigo', texto: texto, problemas: [] };
+    if (p.length !== 10) { r.invalido = 'El código no tiene sus 10 partes: está cortado o incompleto.'; return r; }
+    r.nombre = p[2]; r.cedula = p[1];
+    if (b36(djb2(C.sal + p.slice(0, 9).join('|'))) !== p[9]) {
+      r.invalido = 'La firma no corresponde a los datos: el código fue modificado o copiado con errores.'; return r;
+    }
+    r.variante = p[3] === 'VA' ? 'A (cédula par)' : 'B (cédula impar)';
+    var ctl = controlCaso(p[5], C);
+    r.aciertos = ctl.bien; r.control = ctl.det;
+    r.largo = parseInt(p[6], 10); r.huella = p[7].replace(/T$/, ''); r.fecha = p[8];
+    if (!cedulaValida(r.cedula)) r.problemas.push('La cédula no supera el dígito verificador.');
+    var par = parseInt(r.cedula.slice(-1), 10) % 2 === 0;
+    if ((p[3] === 'VA') !== par) r.problemas.push('La variante no corresponde a la paridad de la cédula.');
+    if (parseInt(p[4], 10) !== ctl.bien) r.problemas.push('Declara ' + p[4].replace('C', '') + ' en el control; las respuestas marcadas dan ' + ctl.bien + '/5.');
+    if (ctl.bien < 5) r.problemas.push('El acta se emitió sin las cinco respuestas correctas del control.');
+    return r;
+  }
+
+  function cruzarCasos(casos){
+    casos.forEach(function(cod){
+      if (cod.tipo !== 'codigo' || cod.invalido) return;
+      casos.forEach(function(pa){
+        if (pa.tipo !== 'respaldo' || pa.invalido || pa.cedula !== cod.cedula || !pa.nodo) return;
+        var igual = pa.huella === cod.huella;
+        var li = document.createElement('li');
+        li.textContent = igual
+          ? 'La huella del texto coincide con el acta entregada (código de la línea ' + cod.n + '): es el mismo texto.'
+          : 'La huella del texto NO coincide con el acta entregada (código de la línea ' + cod.n + '): el texto cambió después de emitirla, o es otro.';
+        var ul = pa.nodo.querySelector('ul.cruce');
+        if (ul) { ul.appendChild(li); ul.hidden = false; }
+      });
+    });
+  }
+
+  function fichaCaso(r, C, n){
+    r.n = n;
+    var div = document.createElement('section');
+    div.className = 'ficha'; r.nodo = div;
+    var est = r.invalido ? '<span class="estado mal">No válido</span>'
+            : r.problemas.length ? '<span class="estado av">Válido, con observaciones</span>'
+            : '<span class="estado ok">Válido</span>';
+    var h = '<span class="tipo">Línea ' + n + ' · Caso Harvard · '
+          + (r.tipo === 'respaldo' ? 'Respaldo del estudiante' : 'Código del acta') + '</span>'
+          + '<h2>' + est + esc(r.nombre || '—') + '</h2>';
+    if (r.invalido) {
+      h += '<ul class="notas"><li>' + esc(r.invalido) + '</li></ul>';
+    } else {
+      h += '<dl><dt>Cédula</dt><dd>' + esc(r.cedula) + '</dd>'
+        + '<dt>Variante</dt><dd>' + r.variante + '</dd>'
+        + (r.pareja ? '<dt>Pareja</dt><dd>' + esc(r.pareja) + '</dd>' : '')
+        + '<dt>Control registral</dt><dd><b>' + r.aciertos + ' de 5</b></dd>'
+        + (r.fecha ? '<dt>Acta emitida</dt><dd>' + esc(r.fecha) + '</dd>' : '')
+        + (r.guardado ? '<dt>Respaldo del</dt><dd>' + esc(new Date(r.guardado).toLocaleString('es-EC')) + '</dd>' : '')
+        + '<dt>Huella del texto</dt><dd><code>' + esc(r.huella) + '</code> · ' + r.largo + ' caracteres</dd></dl>';
+      if (r.problemas.length) h += '<ul class="notas"><li>' + r.problemas.map(esc).join('</li><li>') + '</li></ul>';
+      h += '<ul class="notas cruce" hidden></ul>';
+      h += '<details><summary>Control registral, pregunta por pregunta</summary>'
+        + r.control.map(function(q){
+            var ok = q.marcada === q.correcta;
+            return '<div class="preg"><p class="enun"><span class="marca ' + (q.marcada === '-' ? 'av">Sin responder'
+              : ok ? 'ok">Acierto' : 'mal">Fallo') + '</span>' + q.n + '. ' + esc(q.rotulo) + '</p>'
+              + '<p>Marcó ' + (q.marcada === '-' ? '—' : q.marcada + ')')
+              + (ok ? '' : ' <span class="op">· correcta: ' + q.correcta + ')</span>') + '</p></div>';
+          }).join('') + '</details>';
+      if (r.campos) {
+        h += '<details><summary>Texto completo del acta</summary>'
+          + '<p class="op">Junta del ' + esc(r.campos['acta-fecha'] || '—') + ', ' + esc(r.campos['acta-hora'] || '—') + '</p>'
+          + PARTES.map(function(pt){
+              return '<p class="seccion-det">' + esc(pt[1]) + '</p><p style="white-space:pre-wrap">'
+                + esc(r.campos[pt[0]] || '(sin redactar)') + '</p>';
+            }).join('') + '</details>'
+          + '<div class="acciones"><button type="button" class="pdf-acta">Descargar el texto del acta en PDF</button></div>';
+      }
+    }
+    div.innerHTML = h;
+    var b = div.querySelector('.pdf-acta');
+    if (b) b.addEventListener('click', function(){ pdfActa(r); });
+    return div;
+  }
+
+  function pdfActa(r){
+    var J = window.jspdf && window.jspdf.jsPDF;
+    if (!J) { alert('No se pudo cargar el generador de PDF. Revise su conexión y recargue la página.'); return; }
+    var doc = new J({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    var IZQ = 20, ANCHO = 170, y = 20;
+    function salto(h){ if (y + h > 282) { doc.addPage(); y = 20; } }
+    function linea(texto, tam, estilo, color, alto){
+      doc.setFont(estilo === 'titulo' ? 'times' : 'helvetica', estilo === 'titulo' ? 'bold' : estilo);
+      doc.setFontSize(tam); doc.setTextColor(color);
+      String(texto).split('\n').forEach(function(par){
+        doc.splitTextToSize(par || ' ', ANCHO).forEach(function(l){ salto(alto); doc.text(l, IZQ, y); y += alto; });
+      });
+    }
+    linea('UNIVERSIDAD CATÓLICA DE CUENCA · DERECHO MERCANTIL Y SOCIETARIO', 8.5, 'normal', 90, 4.5);
+    y += 2; linea('Caso Harvard · Texto del acta', 17, 'titulo', 0, 7);
+    linea('Reconstruido por el docente a partir del respaldo del estudiante. No sustituye al acta '
+      + 'oficial que el estudiante descarga: sirve para leer y revisar lo que escribió.', 9, 'normal', 80, 4.5);
+    y += 2;
+    linea('Estudiante: ' + r.nombre + ' · Cédula: ' + r.cedula + ' · Variante ' + r.variante, 9.5, 'normal', 0, 5);
+    if (r.pareja) linea('Pareja de sustentación: ' + r.pareja, 9.5, 'normal', 0, 5);
+    linea('Junta del ' + (r.campos['acta-fecha'] || '—') + ', ' + (r.campos['acta-hora'] || '—')
+      + ' · Control registral: ' + r.aciertos + ' de 5 · Huella del texto: ' + r.huella, 9.5, 'normal', 0, 5);
+    y += 2; doc.setDrawColor(0); doc.setLineWidth(0.3); doc.line(IZQ, y, IZQ + ANCHO, y); y += 6;
+    PARTES.forEach(function(pt){
+      salto(14); linea(pt[1].toUpperCase(), 9, 'bold', 60, 5); y += 1;
+      linea(r.campos[pt[0]] || '(sin redactar)', 10, 'normal', 0, 5); y += 4;
+    });
+    doc.save('Acta_texto_Caso_Harvard_' + r.cedula + '_docente.pdf');
+  }
+
   /* ---------- pintar ---------- */
   function ficha(r, B, n){
     var div = document.createElement('section');
@@ -457,6 +650,10 @@ code{font-size:.8rem;overflow-wrap:anywhere}
   /* Del texto pegado se toma desde donde empieza el pase o el codigo hasta el
      final de la linea: asi sirve pegar «Marisol: PASE|M1|...» tal cual llega. */
   function extraer(linea){
+    if (CASO) {
+      var h = linea.match(/PASEH\|[A-Za-z0-9+\/=]+\|[0-9A-Z]+/) || linea.match(/\bCH\|\d{6,}\|.*$/);
+      if (h) return h[0].trim();
+    }
     var m = linea.match(new RegExp('PASE\\|(' + CLAVES + ')\\|.*$'))
          || linea.match(new RegExp('\\b(' + CLAVES + ')\\|\\d{6,}\\|.*$'));
     return m ? m[0].trim() : null;
@@ -466,7 +663,7 @@ code{font-size:.8rem;overflow-wrap:anywhere}
     var res = document.getElementById('resultados'), msg = document.getElementById('mensaje');
     res.innerHTML = ''; filasCsv = []; document.getElementById('csv').disabled = true;
     var lineas = document.getElementById('entrada').value.split(/\r?\n/);
-    var tareas = [], ignoradas = 0;
+    var tareas = [], ignoradas = 0, casos = [];
     lineas.forEach(function(l, i){
       if (!l.trim()) return;
       var t = extraer(l);
@@ -475,13 +672,29 @@ code{font-size:.8rem;overflow-wrap:anywhere}
     });
     if (!tareas.length) {
       msg.textContent = 'No encontré ningún pase ni código. Un pase empieza por PASE| y un código por '
-        + Object.keys(FUENTES).join('|, ') + '|.';
+        + Object.keys(FUENTES).join('|, ') + '|' + (CASO ? '; del Caso Harvard, PASEH| o CH|.' : '.');
       return;
     }
     msg.textContent = 'Leyendo el banco de preguntas…';
     var cadena = Promise.resolve();
     tareas.forEach(function(t){
       cadena = cadena.then(function(){
+        if (/^(PASEH|CH)\|/.test(t.texto)) {
+          return cargarCaso().then(function(C){
+            var r = t.texto.indexOf('PASEH|') === 0 ? leerPaseCaso(t.texto, C) : leerCodigoCaso(t.texto, C);
+            casos.push(r);
+            res.appendChild(fichaCaso(r, C, t.n));
+            filasCsv.push([r.nombre || '', r.cedula || '', 'CASO HARVARD', r.tipo,
+              r.invalido ? 'NO VALIDO' : (r.problemas.length ? 'CON OBSERVACIONES' : 'VALIDO'),
+              '', r.invalido ? '' : r.aciertos + '/5 control',
+              (r.invalido ? [r.invalido] : r.problemas).join(' / ')]);
+          }, function(e){
+            var d = document.createElement('section'); d.className = 'ficha';
+            d.innerHTML = '<span class="tipo">Línea ' + t.n + '</span><h2><span class="estado mal">Error</span></h2>'
+              + '<ul class="notas"><li>' + esc(e.message) + '</li></ul>';
+            res.appendChild(d);
+          });
+        }
         var bloque = t.texto.indexOf('PASE|') === 0 ? t.texto.split('|')[1] : t.texto.split('|')[0];
         return banco(bloque).then(function(B){
           var r = t.texto.indexOf('PASE|') === 0 ? leerPase(t.texto, B) : leerCodigo(t.texto, B);
@@ -499,6 +712,7 @@ code{font-size:.8rem;overflow-wrap:anywhere}
       });
     });
     cadena.then(function(){
+      cruzarCasos(casos);
       msg.textContent = tareas.length + (tareas.length === 1 ? ' elemento revisado' : ' elementos revisados')
         + (ignoradas ? '; ' + ignoradas + ' línea(s) sin pase ni código, ignoradas.' : '.');
       document.getElementById('csv').disabled = !filasCsv.length;
